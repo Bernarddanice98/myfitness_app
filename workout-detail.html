@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>FitBlueprint · Workout Session</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .page {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 30px;
+      padding: 25px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .back-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+    .back-btn { background: #667eea; color: white; text-decoration: none; padding: 10px 15px; border-radius: 10px; }
+    h2 { color: #667eea; margin-bottom: 20px; font-size: 20px; }
+    .exercise-card { background: #f8f9fa; border-radius: 15px; padding: 20px; margin-bottom: 15px; }
+    .exercise-card.completed { background: #e8f5e9; border-left: 4px solid #4caf50; }
+    .exercise-name { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
+    .exercise-details { display: flex; gap: 20px; margin: 15px 0; color: #666; }
+    .set-item { background: white; padding: 12px; margin: 8px 0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .set-info { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .reps-input, .weight-input { width: 70px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 8px; text-align: center; }
+    .set-checkbox { width: 20px; height: 20px; cursor: pointer; }
+    .complete-btn { width: 100%; background: #4caf50; color: white; border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    .progress-bar { background: #e0e0e0; border-radius: 10px; height: 20px; margin-bottom: 20px; overflow: hidden; }
+    .progress-fill { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: 0%; transition: width 0.3s ease; }
+    .save-progress-btn { width: 100%; background: #667eea; color: white; border: none; padding: 12px; border-radius: 12px; font-size: 14px; cursor: pointer; margin-top: 10px; }
+    .status-badge { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 8px; font-size: 10px; z-index: 9999; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="back-header">
+      <a href="workout.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+      <h2 id="workoutTitle">Workout Session</h2>
+    </div>
+    
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    
+    <div id="exercisesContainer"></div>
+    
+    <button class="complete-btn" id="completeWorkoutBtn">
+      <i class="fas fa-check-circle"></i> Complete Workout
+    </button>
+    <button class="save-progress-btn" id="saveProgressBtn">
+      <i class="fas fa-save"></i> Save Progress
+    </button>
+  </div>
+  
+  <div class="status-badge" id="statusBadge">🔌 Checking...</div>
+
+  <script>
+    // ============================================
+    // FIXED: Hardcoded API URL for local development
+    // ============================================
+    const API_URL = 'http://localhost:3000/api';
+    
+    // Test server connection immediately
+    async function testConnection() {
+      const statusDiv = document.getElementById('statusBadge');
+      try {
+        const response = await fetch(`${API_URL}/test`);
+        if (response.ok) {
+          statusDiv.innerHTML = '✅ Server connected';
+          statusDiv.style.background = 'rgba(76, 175, 80, 0.9)';
+          return true;
+        }
+      } catch (error) {
+        statusDiv.innerHTML = '❌ Server not running! Run: node server.js';
+        statusDiv.style.background = 'rgba(244, 67, 54, 0.9)';
+        console.error('Connection error:', error);
+        return false;
+      }
+    }
+    
+    testConnection();
+    
+    let workoutData = JSON.parse(localStorage.getItem('currentWorkout'));
+    let setsStatus = {};
+    let weightsData = {};
+    let repsData = {};
+    
+    if (!workoutData || !workoutData.day) {
+      alert('No workout selected. Please go back and choose a workout.');
+      window.location.href = 'workout.html';
+    }
+    
+    function loadSavedProgress() {
+      const savedKey = `workout_progress_${workoutData.dayIndex}_${workoutData.workoutName}`;
+      const saved = localStorage.getItem(savedKey);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          setsStatus = data.setsStatus || {};
+          weightsData = data.weightsData || {};
+          repsData = data.repsData || {};
+        } catch(e) {}
+      }
+    }
+    
+    function saveProgress() {
+      const savedKey = `workout_progress_${workoutData.dayIndex}_${workoutData.workoutName}`;
+      localStorage.setItem(savedKey, JSON.stringify({
+        setsStatus: setsStatus,
+        weightsData: weightsData,
+        repsData: repsData
+      }));
+      
+      saveToServer();
+      showNotification('Progress saved!', 'success');
+    }
+    
+    async function saveToServer() {
+      const token = localStorage.getItem('authToken');
+      const userId = localStorage.getItem('userId');
+      
+      if (!token || !userId) {
+        console.log('Not logged in, skipping server save');
+        return;
+      }
+      
+      const progressData = {
+        workoutData: { day: { name: workoutData.day.name } },
+        setsStatus: setsStatus,
+        weightsData: weightsData,
+        repsData: repsData
+      };
+      
+      try {
+        const response = await fetch(`${API_URL}/workout-progress/${userId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'X-User-Id': userId
+          },
+          body: JSON.stringify(progressData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Synced to server:', result);
+          document.getElementById('statusBadge').innerHTML = '✅ Last sync OK';
+          setTimeout(() => {
+            document.getElementById('statusBadge').innerHTML = '✅ Server connected';
+          }, 2000);
+        } else {
+          console.error('Server error:', response.status);
+        }
+      } catch (error) {
+        console.error('Failed to sync:', error.message);
+      }
+    }
+    
+    function getExerciseDescription(exerciseName) {
+      const descriptions = {
+        'Barbell Bench Press': 'Lie on bench, feet flat. Lower bar to chest, press up explosively.',
+        'Pull-ups': 'Hang from bar, pull chest to bar. Control the descent.',
+        'Squats': 'Keep chest up, back straight. Lower until thighs parallel.',
+        'Deadlifts': 'Hinge at hips, keep back straight. Bar close to shins.',
+        'Push-ups': 'Hands shoulder-width, body straight. Lower chest to ground.'
+      };
+      return descriptions[exerciseName] || 'Keep proper form. Control the movement.';
+    }
+    
+    function updateProgress() {
+      let totalSets = 0;
+      let completedSets = 0;
+      
+      for (const exerciseId in setsStatus) {
+        if (setsStatus[exerciseId]) {
+          totalSets += setsStatus[exerciseId].length;
+          completedSets += setsStatus[exerciseId].filter(completed => completed === true).length;
+        }
+      }
+      
+      const progressPercent = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
+      document.getElementById('progressFill').style.width = `${progressPercent}%`;
+    }
+    
+    function handleCheckboxChange(exerciseId, setIndex, checkbox) {
+      if (!setsStatus[exerciseId]) setsStatus[exerciseId] = [];
+      setsStatus[exerciseId][setIndex] = checkbox.checked;
+      
+      const exerciseCard = checkbox.closest('.exercise-card');
+      const allCompleted = setsStatus[exerciseId].every(completed => completed === true);
+      if (allCompleted) {
+        exerciseCard.classList.add('completed');
+      } else {
+        exerciseCard.classList.remove('completed');
+      }
+      
+      updateProgress();
+      saveProgress();
+    }
+    
+    function handleWeightChange(exerciseId, setIndex, input) {
+      if (!weightsData[exerciseId]) weightsData[exerciseId] = [];
+      weightsData[exerciseId][setIndex] = input.value;
+      saveProgress();
+    }
+    
+    function handleRepsChange(exerciseId, setIndex, input) {
+      if (!repsData[exerciseId]) repsData[exerciseId] = [];
+      repsData[exerciseId][setIndex] = input.value;
+      saveProgress();
+    }
+    
+    function renderExercises() {
+      const container = document.getElementById('exercisesContainer');
+      container.innerHTML = '';
+      loadSavedProgress();
+      
+      workoutData.day.exercises.forEach((exercise, exIndex) => {
+        const exerciseId = `ex_${exIndex}`;
+        const defaultReps = exercise.reps;
+        
+        if (!setsStatus[exerciseId]) {
+          setsStatus[exerciseId] = Array(exercise.sets).fill(false);
+        }
+        if (!weightsData[exerciseId]) {
+          weightsData[exerciseId] = Array(exercise.sets).fill('');
+        }
+        if (!repsData[exerciseId]) {
+          repsData[exerciseId] = Array(exercise.sets).fill(defaultReps);
+        }
+        
+        const completedCount = setsStatus[exerciseId].filter(s => s === true).length;
+        const exerciseCard = document.createElement('div');
+        exerciseCard.className = `exercise-card ${completedCount === exercise.sets ? 'completed' : ''}`;
+        
+        let setsHtml = '';
+        for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
+          const isChecked = setsStatus[exerciseId][setIndex] === true;
+          const weightValue = weightsData[exerciseId][setIndex] || '';
+          const repsValue = repsData[exerciseId][setIndex] || defaultReps;
+          
+          setsHtml += `
+            <div class="set-item">
+              <div class="set-info">
+                <span><strong>Set ${setIndex + 1}</strong></span>
+                <div><input type="number" class="reps-input" value="${repsValue}" data-exercise="${exerciseId}" data-set="${setIndex}" style="width:60px;"> reps</div>
+                <div><input type="number" class="weight-input" value="${weightValue}" data-exercise="${exerciseId}" data-set="${setIndex}" style="width:60px;"> kg</div>
+              </div>
+              <label><input type="checkbox" class="set-checkbox" data-exercise="${exerciseId}" data-set="${setIndex}" ${isChecked ? 'checked' : ''}> ✓ Done</label>
+            </div>
+          `;
+        }
+        
+        exerciseCard.innerHTML = `
+          <div class="exercise-name"><i class="fas fa-dumbbell"></i> ${exercise.name}</div>
+          <div class="exercise-details">
+            <span>${exercise.sets} sets</span>
+            <span>Target: ${defaultReps} reps</span>
+          </div>
+          <div class="sets-container">${setsHtml}</div>
+          <div style="background:#e3f2fd; padding:10px; border-radius:8px; margin-top:10px; font-size:12px;">
+            <i class="fas fa-info-circle"></i> ${getExerciseDescription(exercise.name)}
+          </div>
+        `;
+        
+        container.appendChild(exerciseCard);
+      });
+      
+      document.querySelectorAll('.set-checkbox').forEach(checkbox => {
+        const exerciseId = checkbox.dataset.exercise;
+        const setIndex = parseInt(checkbox.dataset.set);
+        checkbox.addEventListener('change', function() {
+          handleCheckboxChange(exerciseId, setIndex, this);
+        });
+      });
+      
+      document.querySelectorAll('.weight-input').forEach(input => {
+        const exerciseId = input.dataset.exercise;
+        const setIndex = parseInt(input.dataset.set);
+        input.addEventListener('change', function() {
+          handleWeightChange(exerciseId, setIndex, this);
+        });
+      });
+      
+      document.querySelectorAll('.reps-input').forEach(input => {
+        const exerciseId = input.dataset.exercise;
+        const setIndex = parseInt(input.dataset.set);
+        input.addEventListener('change', function() {
+          handleRepsChange(exerciseId, setIndex, this);
+        });
+      });
+      
+      updateProgress();
+    }
+    
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+        background: ${type === 'success' ? '#4caf50' : '#ff9800'};
+        color: white; padding: 12px 24px; border-radius: 8px;
+        z-index: 2000; font-size: 14px;
+      `;
+      notification.innerHTML = message;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 2000);
+    }
+    
+    document.getElementById('workoutTitle').textContent = workoutData.day.name;
+    
+    document.getElementById('completeWorkoutBtn').addEventListener('click', () => {
+      let allCompleted = true;
+      for (const exerciseId in setsStatus) {
+        if (setsStatus[exerciseId] && setsStatus[exerciseId].some(completed => !completed)) {
+          allCompleted = false;
+          break;
+        }
+      }
+      
+      if (allCompleted) {
+        const savedKey = `workout_progress_${workoutData.dayIndex}_${workoutData.workoutName}`;
+        localStorage.removeItem(savedKey);
+        alert('🎉 Great job! Workout completed! 💪');
+        window.location.href = 'workout.html';
+      } else {
+        alert('⚠️ Please complete all sets before finishing!');
+      }
+    });
+    
+    document.getElementById('saveProgressBtn').addEventListener('click', () => {
+      saveProgress();
+    });
+    
+    renderExercises();
+  </script>
+</body>
+</html>
