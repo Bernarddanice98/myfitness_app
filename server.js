@@ -646,11 +646,11 @@ app.post('/api/workout-complete/:userId', async (req, res) => {
     );
     
     if (userCheck.rows.length === 0) {
-      await pool.query(
-        `INSERT INTO user_data (user_id, profile, saved_workouts, workout_history, completed_workouts) 
-         VALUES ($1, $2, $3, $4, $5)`,
-        [userId, '{}', '[]', '{}', '{}']
-      );
+       await pool.query(
+    `INSERT INTO user_data (user_id, profile, saved_workouts, workout_history, completed_workouts) 
+     VALUES ($1, $2, $3, $4, $5)`,
+    [userId, {}, [], {}, {}]  // ← Changé
+  );
     }
     
     const result = await pool.query(
