@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>FitBlueprint · Nutrition & Recipes</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="nutrition.css"
+</head>
+<body>
+  <script src="auth-check.js"></script>
+  
+  <div class="page">
+    <div class="back-header">
+      <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+      <h2>Nutrition & Recipes</h2>
+    </div>
+
+    <div class="goal-badge" id="goalBadge">
+      <i class="fas fa-bullseye"></i> <span id="goalBadgeText">Lose Weight</span>
+    </div>
+
+    <div class="category-tabs">
+      <div class="category-tab active" data-category="high-protein">High Protein</div>
+      <div class="category-tab" data-category="low-carb">Low Carb</div>
+      <div class="category-tab" data-category="quick-meals">Quick Meals</div>
+      <div class="category-tab" data-category="breakfast">Breakfast</div>
+    </div>
+
+    <div class="tap-hint">
+      <i class="fas fa-hand-pointer"></i> Tap any card to see full recipe & instructions
+    </div>
+
+    <button class="ai-recipe-btn" id="aiRecipeBtn">
+      <i class="fas fa-robot"></i> Generate AI Recipe
+    </button>
+
+    <div id="recipesContainer">
+      <!-- Recipes will be loaded here -->
+    </div>
+
+    <div class="tips-card">
+      <h3><i class="fas fa-lightbulb"></i> Coach's Tips</h3>
+      <ul>
+        <li><i class="fas fa-check-circle"></i> Drink at least 8 glasses of water daily</li>
+        <li><i class="fas fa-check-circle"></i> Eat protein with every meal</li>
+        <li><i class="fas fa-check-circle"></i> Include vegetables in every meal</li>
+        <li><i class="fas fa-check-circle"></i> Don't skip breakfast</li>
+        <li><i class="fas fa-check-circle"></i> Plan your meals ahead</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000/api'
+        : 'https://your-production-api.com/api';
+
+    // Recipe database
+    const recipes = {
+      'high-protein': [
+        {
+          name: "Grilled Chicken & Quinoa Bowl",
+          calories: 450,
+          protein: 42,
+          carbs: 35,
+          fat: 15,
+          type: "Lunch/Dinner",
+          ingredients: [
+            "200g chicken breast",
+            "100g quinoa (cooked)",
+            "50g avocado",
+            "100g mixed greens",
+            "2 tbsp olive oil",
+            "Lemon juice"
+          ],
+          instructions: [
+            "Season chicken with salt, pepper, garlic powder",
+            "Pan-sear chicken in olive oil (6-8 min per side)",
+            "Cook quinoa according to package",
+            "Assemble bowl: greens → quinoa → chicken",
+            "Top with avocado slices and lemon juice"
+          ]
+        },
+        {
+          name: "Protein Power Smoothie",
+          calories: 380,
+          protein: 35,
+          carbs: 40,
+          fat: 10,
+          type: "Breakfast",
+          ingredients: [
+            "1 scoop protein powder",
+            "1 banana",
+            "200ml almond milk",
+            "1 tbsp peanut butter",
+            "Ice cubes"
+          ],
+          instructions: [
+            "Add all ingredients to blender",
+            "Blend until smooth",
+            "Pour into glass",
+            "Enjoy immediately"
+          ]
+        }
+      ],
+      'low-carb': [
+        {
+          name: "Zucchini Noodle Pasta",
+          calories: 320,
+          protein: 25,
+          carbs: 15,
+          fat: 18,
+          type: "Dinner",
+          ingredients: [
+            "2 zucchinis (spiralized)",
+            "150g ground turkey",
+            "1/2 cup marinara sauce",
+            "2 tbsp olive oil",
+            "Garlic, salt, pepper"
+          ],
+          instructions: [
+            "Spiralize zucchinis into noodles",
+            "Cook ground turkey in pan",
+            "Add garlic and sauce",
+            "Add zucchini noodles and cook 2-3 minutes",
+            "Season and serve"
+          ]
+        }
+      ],
+      'quick-meals': [
+        {
+          name: "5-Minute Tuna Salad",
+          calories: 350,
+          protein: 30,
+          carbs: 10,
+          fat: 20,
+          type: "Lunch",
+          ingredients: [
+            "1 can tuna",
+            "2 tbsp Greek yogurt",
+            "1 tbsp mustard",
+            "Celery, onion",
+            "Salt and pepper"
+          ],
+          instructions: [
+            "Drain tuna",
+            "Mix with Greek yogurt and mustard",
+            "Add chopped celery and onion",
+            "Season to taste",
+            "Serve with lettuce wraps"
+          ]
+        }
+      ],
+      'breakfast': [
+        {
+          name: "Overnight Oats",
+          calories: 400,
+          protein: 20,
+          carbs: 55,
+          fat: 12,
+          type: "Breakfast",
+          ingredients: [
+            "50g rolled oats",
+            "200ml milk",
+            "1 scoop protein powder",
+            "1 tbsp chia seeds",
+            "Berries for topping"
+          ],
+          instructions: [
+            "Mix all ingredients in a jar",
+            "Refrigerate overnight",
+            "Top with berries",
+            "Enjoy cold or warm"
+          ]
+        }
+      ]
+    };
+
+    // Function to toggle recipe expansion
+    function toggleRecipe(cardElement) {
+      cardElement.classList.toggle('expanded');
+    }
+
+    function displayRecipes(category) {
+      const container = document.getElementById('recipesContainer');
+      const categoryRecipes = recipes[category] || recipes['high-protein'];
+      
+      container.innerHTML = categoryRecipes.map((recipe, index) => `
+        <div class="recipe-card" onclick="toggleRecipe(this)">
+          <div class="recipe-front">
+            <div class="recipe-header">
+              <h4><i class="fas fa-utensils"></i> ${recipe.name}</h4>
+              <span class="macro-badge">🔥 ${recipe.calories} cal</span>
+            </div>
+            <div class="recipe-macros">
+              <span class="macro-pill">💪 ${recipe.protein}g protein</span>
+              <span class="macro-pill">🌾 ${recipe.carbs}g carbs</span>
+              <span class="macro-pill">🥑 ${recipe.fat}g fat</span>
+            </div>
+            <div class="expand-hint">
+              <i class="fas fa-hand-pointer"></i> Tap to see full recipe
+            </div>
+          </div>
+          <div class="recipe-expandable">
+            <div class="recipe-content">
+              <div class="recipe-section">
+                <h5><i class="fas fa-shopping-basket"></i> INGREDIENTS</h5>
+                <ul class="ingredient-list">
+                  ${recipe.ingredients.map(ing => `<li><i class="fas fa-circle"></i> ${ing}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="recipe-section">
+                <h5><i class="fas fa-list-ol"></i> INSTRUCTIONS</h5>
+                <ol class="instruction-list">
+                  ${recipe.instructions.map(step => `<li>${step}</li>`).join('')}
+                </ol>
+              </div>
+              <button class="save-recipe-btn" onclick="event.stopPropagation(); saveRecipe('${recipe.name}')">
+                <i class="fas fa-bookmark"></i> Save Recipe
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function saveRecipe(recipeName) {
+      alert(`📌 "${recipeName}" saved to your cookbook!`);
+    }
+
+    async function generateAIRecipe() {
+      const btn = document.getElementById('aiRecipeBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+      
+      try {
+        const response = await fetch(`${API_URL}/ai/recipe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ goal: localStorage.getItem('goal') || 'maintain' })
+        });
+        
+        const data = await response.json();
+        if (data.recipe) {
+          const container = document.getElementById('recipesContainer');
+          container.innerHTML = `
+            <div class="recipe-card" onclick="toggleRecipe(this)">
+              <div class="recipe-front">
+                <div class="recipe-header">
+                  <h4><i class="fas fa-robot"></i> AI Generated: ${data.recipe.name}</h4>
+                  <span class="macro-badge">🔥 ${data.recipe.calories} cal</span>
+                </div>
+                <div class="recipe-macros">
+                  <span class="macro-pill">💪 ${data.recipe.protein}g protein</span>
+                  <span class="macro-pill">🌾 ${data.recipe.carbs}g carbs</span>
+                  <span class="macro-pill">🥑 ${data.recipe.fat}g fat</span>
+                </div>
+                <div class="expand-hint">
+                  <i class="fas fa-hand-pointer"></i> Tap to see full recipe
+                </div>
+              </div>
+              <div class="recipe-expandable">
+                <div class="recipe-content">
+                  <div class="recipe-section">
+                    <h5><i class="fas fa-shopping-basket"></i> INGREDIENTS</h5>
+                    <ul class="ingredient-list">
+                      ${data.recipe.ingredients.map(i => `<li><i class="fas fa-circle"></i> ${i}</li>`).join('')}
+                    </ul>
+                  </div>
+                  <div class="recipe-section">
+                    <h5><i class="fas fa-list-ol"></i> INSTRUCTIONS</h5>
+                    <ol class="instruction-list">
+                      ${data.recipe.instructions.map(i => `<li>${i}</li>`).join('')}
+                    </ol>
+                  </div>
+                  <button class="save-recipe-btn" onclick="event.stopPropagation(); saveRecipe('${data.recipe.name}')">Save Recipe</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('AI recipe error:', error);
+        alert('AI generation failed. Using default recipes.');
+        displayRecipes('high-protein');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-robot"></i> Generate AI Recipe';
+      }
+    }
+
+    // Load user goal
+    const storedData = localStorage.getItem('fitBlueprintData');
+    if (storedData) {
+      const data = JSON.parse(storedData);
+      const goalText = data.goal === 'lose' ? 'Lose Weight' : (data.goal === 'gain' ? 'Gain Muscle' : 'Maintain Weight');
+      document.getElementById('goalBadgeText').textContent = goalText;
+    }
+
+    // Category tabs
+    document.querySelectorAll('.category-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        displayRecipes(tab.dataset.category);
+      });
+    });
+
+    document.getElementById('aiRecipeBtn').addEventListener('click', generateAIRecipe);
+
+    // Make toggleRecipe available globally
+    window.toggleRecipe = toggleRecipe;
+    window.saveRecipe = saveRecipe;
+
+    // Display default category
+    displayRecipes('high-protein');
+  </script>
+</body>
+</html>

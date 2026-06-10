@@ -148,11 +148,50 @@
   <script>
     (function() {
 
-      // ============================================================
-      // OPENROUTER API KEY
-      // ============================================================
-      const OPENROUTER_API_KEY = OPENROUTER_API_KEY;
-      const OPENROUTER_MODEL = 'meta-llama/llama-3.1-8b-instruct:free';
+      
+const API_URL = 'http://localhost:3000/api';
+
+// Check if user is authenticated before loading the page
+async function checkAuthAndRedirect() {
+  const token = localStorage.getItem('authToken');
+  const expiresAt = localStorage.getItem('sessionExpiresAt');
+  
+  if (!token) {
+    window.location.href = 'login.html';
+    return false;
+  }
+  
+  if (expiresAt && Date.now() > parseInt(expiresAt)) {
+    // Session expired
+    localStorage.clear();
+    window.location.href = 'login.html';
+    return false;
+  }
+  
+  // Verify token with server
+  try {
+    const response = await fetch(`${API_URL}/verify`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'X-User-Id': localStorage.getItem('userId')
+      }
+    });
+    
+    if (!response.ok) {
+      window.location.href = 'login.html';
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.warn('Server unreachable, using cached auth');
+    return true;
+  }
+}
+
+// Call this at the beginning
+checkAuthAndRedirect();
+    
 
       // ---- DOM refs ----
       const heightInput      = document.getElementById('heightInput');
