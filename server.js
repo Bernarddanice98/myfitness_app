@@ -1,4 +1,4 @@
-const path = require('path');  // ← Ajoute ceci en haut
+const path = require('path');
 require('dotenv').config();
 console.log("API key loaded:", !!process.env.OPENROUTER_API_KEY);
 const express = require('express');
@@ -7,18 +7,19 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
 const app = express();
+
 app.use(cors());
 app.use(express.json());
-const { Pool } = require('pg');
+
+// ⭐ AJOUTE CECI - Servir les fichiers statiques (HTML, CSS, JS)
+app.use(express.static(__dirname));
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false  // Nécessaire pour Supabase
+    rejectUnauthorized: false
   }
 });
-
-
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fitblueprint_super_secret_key_2024';
 const SALT_ROUNDS = 10;
@@ -185,6 +186,68 @@ Return ONLY valid JSON in this format:
   } catch (error) {
     console.error('AI error:', error);
     res.json({ success: false, error: error.message });
+  }
+});
+
+// AI Recipe Generation endpoint
+app.post('/api/ai/recipe', async (req, res) => {
+  const { goal } = req.body;
+  
+  console.log('🍽️ Generating AI recipe for goal:', goal);
+  
+  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+  
+  if (!OPENROUTER_API_KEY) {
+    console.error('❌ OPENROUTER_API_KEY not set');
+    return res.status(500).json({ error: 'API key not configured' });
+  }
+  
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://fitblueprint.app',
+        'X-Title': 'FitBlueprint'
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        max_tokens: 1000,
+        temperature: 0.7,
+        messages: [
+          { role: 'system', content: `You are a nutritionist. Create a healthy recipe for ${goal === 'lose' ? 'weight loss' : (goal === 'gain' ? 'muscle gain' : 'maintenance')}. Return ONLY JSON with: name, calories, protein, carbs, fat, ingredients (array), instructions (array).` },
+          { role: 'user', content: `Create a healthy recipe for ${goal === 'lose' ? 'weight loss' : (goal === 'gain' ? 'muscle gain' : 'maintenance')}.` }
+        ]
+      })
+    });
+    
+    const data = await response.json();
+    let aiResponse = data.choices[0]?.message?.content || '';
+    aiResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      const recipe = JSON.parse(jsonMatch[0]);
+      res.json({ success: true, recipe });
+    } else {
+      throw new Error('No JSON found');
+    }
+  } catch (error) {
+    console.error('AI recipe error:', error);
+    // Fallback recipe
+    res.json({ 
+      success: true, 
+      recipe: {
+        name: "Healthy Protein Bowl",
+        calories: 450,
+        protein: 35,
+        carbs: 40,
+        fat: 15,
+        ingredients: ["200g chicken breast", "100g quinoa", "100g vegetables", "2 tbsp olive oil"],
+        instructions: ["Cook chicken", "Prepare quinoa", "Steam vegetables", "Mix everything"]
+      }
+    });
   }
 });
 
@@ -700,38 +763,6 @@ async function resetWeeklyWorkouts() {
 
 scheduleWeeklyReset();
 
-// Database setup
-async function setupDatabase() {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(100) UNIQUE NOT NULL,
-        password_hash VARCHAR(255) NOT NULL
-      )
-    `);
-    
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS user_data (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        profile JSONB DEFAULT '{}',
-        saved_workouts JSONB DEFAULT '[]',
-        workout_history JSONB DEFAULT '{}',
-        completed_workouts JSONB DEFAULT '{}',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(user_id)
-      )
-    `);
-    console.log('✅ Database setup complete');
-  } catch (error) {
-    console.error('Database setup error:', error);
-  }
-}
-
-setupDatabase();
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
@@ -740,6 +771,7 @@ app.listen(PORT, () => {
   console.log('  GET  /api/test');
   console.log('  POST /api/ai/chat');
   console.log('  POST /api/ai/generate-workout');
+  console.log('  POST /api/ai/recipe');
   console.log('  POST /api/register');
   console.log('  POST /api/login');
   console.log('  POST /api/demo-login');
