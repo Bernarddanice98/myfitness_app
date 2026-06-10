@@ -150,7 +150,7 @@
 
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:3000/api'
-    : 'https://myfitness-app-1-a77k.onrender.com/';  // ← Mets l'URL de ton backend
+    : 'https://myfitness-app-1-a77k.onrender.com/api';  // ← Mets l'URL de ton backend
 
 // Check if user is authenticated before loading the page
 async function checkAuthAndRedirect() {
@@ -191,7 +191,7 @@ async function checkAuthAndRedirect() {
 }
 
 // Call this at the beginning
-
+checkAuthAndRedirect();
     
 
       // ---- DOM refs ----
