@@ -267,9 +267,6 @@ app.post('/api/demo-login', async (req, res) => {
 // PROTECTED ROUTES (auth required)
 // ============================================
 
-app.get('/api/verify', authenticateToken, (req, res) => {
-  res.json({ valid: true, user: req.user });
-});
 
 app.post('/api/logout', authenticateToken, (req, res) => {
   const sessionId = req.headers['x-session-id'];
