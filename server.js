@@ -1,3 +1,4 @@
+const path = require('path');  // ← Ajoute ceci en haut
 require('dotenv').config();
 console.log("API key loaded:", !!process.env.OPENROUTER_API_KEY);
 const express = require('express');
@@ -8,14 +9,13 @@ const { Pool } = require('pg');
 const app = express();
 app.use(cors());
 app.use(express.json());
+const { Pool } = require('pg');
 
 const pool = new Pool({
-  user: process.env.DB_USER ,
-  host: process.env.DB_HOST ,
-  database: process.env.DB_NAME || 'fitness_app',
-  password: process.env.DB_PASSWORD ,
-  port: process.env.DB_PORT || 5432,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false  // Nécessaire pour Supabase
+  }
 });
 
 
