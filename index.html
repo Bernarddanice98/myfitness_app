@@ -687,18 +687,23 @@ async function apiFetch(url, options = {}) {
       // ============================================
       // INIT — check auth, then load data
       // ============================================
-      checkAuthAndRedirect().then(isAuthed => {
-        if (!isAuthed) return; // redirect already triggered
+   function checkAuthAndRedirect() {
+  const token = localStorage.getItem('authToken');
+  const expiresAt = localStorage.getItem('sessionExpiresAt');
 
-        const hasSavedData = loadSavedData();
-        updateAll();
-        if (!hasSavedData) setGoal('lose');
+  if (!token) {
+    window.location.href = 'login.html';
+    return false;
+  }
 
-        // Try loading fresher data from server in background
-        loadProfileFromServer();
+  if (expiresAt && Date.now() > parseInt(expiresAt)) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    return false;
+  }
 
-        console.log('🚀 FitBlueprint initialized', hasSavedData ? 'with saved data' : 'with defaults');
-      });
+  return true; // token existe et n'est pas expiré — on fait confiance
+}
 
     })();
   </script>
