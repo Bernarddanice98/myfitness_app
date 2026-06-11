@@ -382,18 +382,16 @@
         if (!token || !userId) return;
 
         try {
-          await fetch(`${API_URL}/user-data/${userId}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              profile:        userData,
-              savedWorkouts:  JSON.parse(localStorage.getItem('savedWorkouts')  || '[]'),
-              workoutHistory: JSON.parse(localStorage.getItem('workoutHistory') || '{}')
-            })
-          });
+          const response = await apiFetch(`${API_URL}/user-data/${userId}`, {
+  method: 'POST',
+  body: JSON.stringify({
+    profile:        userData,
+    savedWorkouts:  JSON.parse(localStorage.getItem('savedWorkouts')  || '[]'),
+    workoutHistory: JSON.parse(localStorage.getItem('workoutHistory') || '{}')
+  })
+});
+if (!response) return; // redirected to login
+          
           console.log('✅ Profile saved to server');
         } catch (error) {
           console.warn('Error saving profile to server:', error);
@@ -406,9 +404,8 @@
         if (!token || !userId) return;
 
         try {
-          const response = await fetch(`${API_URL}/user-data/${userId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          const response = await apiFetch(`${API_URL}/user-data/${userId}`);
+if (!response) return; // redirected to login
 
           if (response.ok) {
             const data = await response.json();
@@ -665,7 +662,28 @@ Now respond based on the user's ACTUAL goal: ${ctx.goal === 'gain' ? 'MUSCLE GAI
       aiFab.addEventListener('click', () => { updateAll(); aiModal.classList.add('active'); });
       closeAiBtn.addEventListener('click', () => aiModal.classList.remove('active'));
       aiModal.addEventListener('click', (e) => { if (e.target === aiModal) aiModal.classList.remove('active'); });
+async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem('authToken');
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...(options.headers || {})
+    }
+  });
 
+  if (res.status === 401 || res.status === 403) {
+    // Genuinely rejected token — log out
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('sessionExpiresAt');
+    window.location.href = 'login.html';
+    return null;
+  }
+
+  return res;
+}
       // ============================================
       // INIT — check auth, then load data
       // ============================================
