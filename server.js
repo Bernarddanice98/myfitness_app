@@ -441,24 +441,4 @@ async function resetWeeklyWorkouts() {
 
 scheduleWeeklyReset();
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log('========================================');
-  console.log('Public endpoints (no auth):');
-  console.log('  GET  /api/test');
-  console.log('  POST /api/ai/chat');
-  console.log('  POST /api/ai/generate-workout');
-  console.log('  POST /api/ai/recipe');
-  console.log('  POST /api/register');
-  console.log('  POST /api/login');
-  console.log('  POST /api/demo-login');
-  console.log('Protected endpoints (auth required):');
-  console.log('  GET  /api/verify');
-  console.log('  POST /api/logout');
-  console.log('  GET/POST /api/user-data/:userId');
-  console.log('  POST /api/workout-progress/:userId');
-  console.log('  GET  /api/completed-workouts/:userId');
-  console.log('  POST /api/workout-complete/:userId');
-  console.log('========================================');
-});
+module.exports = app;
