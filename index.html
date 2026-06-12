@@ -146,402 +146,320 @@
   </div>
 
   <script>
-    (function () {
-
-      // ============================================
-      // SINGLE SOURCE OF TRUTH FOR API URL
-      // ============================================
-      const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+(function() {
+    // ============================================
+    // API URL - SINGLE SOURCE OF TRUTH
+    // ============================================
+    const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3000/api'
-        : 'https://myfitness-app-1-a77k.onrender.com/api'; // <-- /api is included here
-
-      // ============================================
-      // AUTH CHECK — redirect to login if not valid
-      // ============================================
-      async function checkAuthAndRedirect() {
+        : 'https://myfitness-app-1-a77k.onrender.com/api';
+    
+    console.log('🌐 API_URL:', API_URL);
+    
+    // ============================================
+    // AUTH CHECK - SIMPLE ET RAPIDE
+    // ============================================
+    function checkAuth() {
         const token = localStorage.getItem('authToken');
         const expiresAt = localStorage.getItem('sessionExpiresAt');
-
+        
         if (!token) {
-          window.location.href = 'login.html';
-          return false;
-        }
-
-        if (expiresAt && Date.now() > parseInt(expiresAt)) {
-          localStorage.clear();
-          window.location.href = 'login.html';
-          return false;
-        }
-
-        try {
-          const response = await fetch(`${API_URL}/verify`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-
-          if (!response.ok) {
-            // Token is invalid — clear storage and redirect
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('sessionExpiresAt');
             window.location.href = 'login.html';
             return false;
-          }
-
-          return true;
-        } catch (error) {
-          // Server unreachable — allow cached auth to proceed
-          console.warn('Server unreachable, using cached auth');
-          return true;
         }
-      }
-
-      // ============================================
-      // DOM REFS
-      // ============================================
-      const heightInput       = document.getElementById('heightInput');
-      const weightInput       = document.getElementById('weightInput');
-      const frequencySelect   = document.getElementById('frequencySelect');
-      const genderSelect      = document.getElementById('genderSelect');
-      const ageInput          = document.getElementById('ageInput');
-      const foodPrefsInput    = document.getElementById('foodPrefsInput');
-      const exercisePrefsInput= document.getElementById('exercisePrefsInput');
-      const calorieDisplay    = document.getElementById('calorieDisplay');
-      const macroProtein      = document.getElementById('macroProtein');
-      const macroCarbs        = document.getElementById('macroCarbs');
-      const macroFat          = document.getElementById('macroFat');
-      const planSummaryText   = document.getElementById('planSummaryText');
-      const goalButtons       = document.querySelectorAll('.goal-btn');
-      const workoutNavBtn     = document.getElementById('workoutNavBtn');
-      const nutritionNavBtn   = document.getElementById('nutritionNavBtn');
-      const bmiFab            = document.getElementById('bmiFab');
-      const fabBmiValue       = document.getElementById('fabBmiValue');
-      const bmiModal          = document.getElementById('bmiModal');
-      const modalHeight       = document.getElementById('modalHeight');
-      const modalWeight       = document.getElementById('modalWeight');
-      const modalBmiValue     = document.getElementById('modalBmiValue');
-      const modalBmiCategory  = document.getElementById('modalBmiCategory');
-      const closeModalBtn     = document.getElementById('closeModalBtn');
-      const aiFab             = document.getElementById('aiFab');
-      const aiModal           = document.getElementById('aiModal');
-      const closeAiBtn        = document.getElementById('closeAiBtn');
-      const aiChatMessages    = document.getElementById('aiChatMessages');
-      const aiChatInput       = document.getElementById('aiChatInput');
-      const sendAiBtn         = document.getElementById('sendAiBtn');
-
-      let currentGoal = 'lose';
-      let userData = {};
-      let conversationHistory = [];
-
-      // ============================================
-      // LOAD SAVED DATA
-      // ============================================
-      function loadSavedData() {
+        
+        if (expiresAt && Date.now() > parseInt(expiresAt)) {
+            localStorage.clear();
+            window.location.href = 'login.html';
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // Exécuter la vérification IMMÉDIATEMENT
+    if (!checkAuth()) {
+        // Le reste du code ne s'exécutera pas car redirection
+        return;
+    }
+    
+    // ============================================
+    // DOM REFS
+    // ============================================
+    const heightInput = document.getElementById('heightInput');
+    const weightInput = document.getElementById('weightInput');
+    const frequencySelect = document.getElementById('frequencySelect');
+    const genderSelect = document.getElementById('genderSelect');
+    const ageInput = document.getElementById('ageInput');
+    const foodPrefsInput = document.getElementById('foodPrefsInput');
+    const exercisePrefsInput = document.getElementById('exercisePrefsInput');
+    const calorieDisplay = document.getElementById('calorieDisplay');
+    const macroProtein = document.getElementById('macroProtein');
+    const macroCarbs = document.getElementById('macroCarbs');
+    const macroFat = document.getElementById('macroFat');
+    const planSummaryText = document.getElementById('planSummaryText');
+    const goalButtons = document.querySelectorAll('.goal-btn');
+    const workoutNavBtn = document.getElementById('workoutNavBtn');
+    const nutritionNavBtn = document.getElementById('nutritionNavBtn');
+    const bmiFab = document.getElementById('bmiFab');
+    const fabBmiValue = document.getElementById('fabBmiValue');
+    const bmiModal = document.getElementById('bmiModal');
+    const modalHeight = document.getElementById('modalHeight');
+    const modalWeight = document.getElementById('modalWeight');
+    const modalBmiValue = document.getElementById('modalBmiValue');
+    const modalBmiCategory = document.getElementById('modalBmiCategory');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const aiFab = document.getElementById('aiFab');
+    const aiModal = document.getElementById('aiModal');
+    const closeAiBtn = document.getElementById('closeAiBtn');
+    const aiChatMessages = document.getElementById('aiChatMessages');
+    const aiChatInput = document.getElementById('aiChatInput');
+    const sendAiBtn = document.getElementById('sendAiBtn');
+    
+    let currentGoal = 'lose';
+    let userData = {};
+    let conversationHistory = [];
+    
+    // ============================================
+    // LOAD SAVED DATA
+    // ============================================
+    function loadSavedData() {
         const savedData = localStorage.getItem('fitBlueprintData');
         if (savedData) {
-          try {
-            const data = JSON.parse(savedData);
-            if (data.height)        heightInput.value       = data.height;
-            if (data.weight)        weightInput.value       = data.weight;
-            if (data.age)           ageInput.value          = data.age;
-            if (data.gender)        genderSelect.value      = data.gender;
-            if (data.frequency)     frequencySelect.value   = data.frequency;
-            if (data.foodPrefs)     foodPrefsInput.value    = data.foodPrefs;
-            if (data.exercisePrefs) exercisePrefsInput.value= data.exercisePrefs;
-            if (data.goal) {
-              currentGoal = data.goal;
-              goalButtons.forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-goal') === data.goal);
-              });
+            try {
+                const data = JSON.parse(savedData);
+                if (data.height) heightInput.value = data.height;
+                if (data.weight) weightInput.value = data.weight;
+                if (data.age) ageInput.value = data.age;
+                if (data.gender) genderSelect.value = data.gender;
+                if (data.frequency) frequencySelect.value = data.frequency;
+                if (data.foodPrefs) foodPrefsInput.value = data.foodPrefs;
+                if (data.exercisePrefs) exercisePrefsInput.value = data.exercisePrefs;
+                if (data.goal) {
+                    currentGoal = data.goal;
+                    goalButtons.forEach(btn => {
+                        btn.classList.toggle('active', btn.getAttribute('data-goal') === data.goal);
+                    });
+                }
+                userData = data;
+                console.log('✅ Data loaded from localStorage');
+                return true;
+            } catch (e) {
+                console.error('Failed to load saved data:', e);
             }
-            userData = data;
-            console.log('✅ Data loaded from localStorage');
-            return true;
-          } catch (e) {
-            console.error('Failed to load saved data:', e);
-          }
         }
         return false;
-      }
-
-      // ============================================
-      // BMI & CALORIE CALCULATIONS
-      // ============================================
-      function calcBMI(weight, heightCm) {
+    }
+    
+    // ============================================
+    // BMI & CALORIE CALCULATIONS
+    // ============================================
+    function calcBMI(weight, heightCm) {
         if (!weight || !heightCm || heightCm <= 0 || weight <= 0) return null;
         return weight / ((heightCm / 100) ** 2);
-      }
-
-      function getBMICategory(bmi) {
+    }
+    
+    function getBMICategory(bmi) {
         if (bmi < 18.5) return 'Underweight';
-        if (bmi < 25)   return 'Normal weight';
-        if (bmi < 30)   return 'Overweight';
+        if (bmi < 25) return 'Normal weight';
+        if (bmi < 30) return 'Overweight';
         return 'Obese';
-      }
-
-      function updateFabBMI() {
+    }
+    
+    function updateFabBMI() {
         const bmi = calcBMI(parseFloat(weightInput.value), parseFloat(heightInput.value));
         fabBmiValue.textContent = bmi ? bmi.toFixed(1) : '--';
-      }
-
-      function updateModalBMI() {
+    }
+    
+    function updateModalBMI() {
         const bmi = calcBMI(parseFloat(modalWeight.value), parseFloat(modalHeight.value));
         if (bmi) {
-          modalBmiValue.textContent    = bmi.toFixed(1);
-          modalBmiCategory.textContent = getBMICategory(bmi);
+            modalBmiValue.textContent = bmi.toFixed(1);
+            modalBmiCategory.textContent = getBMICategory(bmi);
         } else {
-          modalBmiValue.textContent    = '--';
-          modalBmiCategory.textContent = 'Enter valid data';
+            modalBmiValue.textContent = '--';
+            modalBmiCategory.textContent = 'Enter valid data';
         }
-      }
-
-      function syncModalInputs() {
+    }
+    
+    function syncModalInputs() {
         modalHeight.value = heightInput.value;
         modalWeight.value = weightInput.value;
         updateModalBMI();
-      }
-
-      function calculateBMR(weight, heightCm, age, gender) {
+    }
+    
+    function calculateBMR(weight, heightCm, age, gender) {
         if (gender === 'male') return (10 * weight) + (6.25 * heightCm) - (5 * age) + 5;
         return (10 * weight) + (6.25 * heightCm) - (5 * age) - 161;
-      }
-
-      function getActivityMultiplier(freq) {
+    }
+    
+    function getActivityMultiplier(freq) {
         if (freq <= 2) return 1.375;
         if (freq === 3) return 1.55;
         if (freq === 4) return 1.725;
         return 1.9;
-      }
-
-      function calculateTDEE() {
+    }
+    
+    function calculateTDEE() {
         const weight = parseFloat(weightInput.value);
         const height = parseFloat(heightInput.value);
-        const age    = parseInt(ageInput.value);
+        const age = parseInt(ageInput.value);
         const gender = genderSelect.value;
-        const freq   = parseInt(frequencySelect.value);
+        const freq = parseInt(frequencySelect.value);
         if (isNaN(weight) || isNaN(height) || isNaN(age) || weight <= 0 || height <= 0 || age <= 0) return null;
         return Math.round(calculateBMR(weight, height, age, gender) * getActivityMultiplier(freq));
-      }
-
-      function getGoalCalories(tdee, goal) {
-        if (goal === 'lose')     return Math.round(tdee - 500);
-        if (goal === 'gain')     return Math.round(tdee + 400);
+    }
+    
+    function getGoalCalories(tdee, goal) {
+        if (goal === 'lose') return Math.round(tdee - 500);
+        if (goal === 'gain') return Math.round(tdee + 400);
         return tdee;
-      }
-
-      function calculateMacros(calories, goal, weight) {
-        const proteinPerKg = goal === 'lose' ? 2.2 : (goal === 'gain' ? 1.8 : 1.6);
-        const fatG         = Math.round((calories * 0.25) / 9);
-        const proteinG     = Math.round(weight * proteinPerKg);
-        const carbG        = Math.round((calories - (proteinG * 4) - (fatG * 9)) / 4);
-        return {
-          protein: Math.max(proteinG, 50),
-          carbs:   Math.max(carbG, 100),
-          fat:     Math.max(fatG, 30)
-        };
-      }
-
-      // ============================================
-      // SAVE DATA
-      // ============================================
-      function saveAllData() {
-        const tdee   = calculateTDEE();
+    }
+    
+    function calculateMacros(calories, goal, weight) {
+        let proteinPerKg = goal === 'lose' ? 2.2 : (goal === 'gain' ? 1.8 : 1.6);
+        const fatG = Math.round((calories * 0.25) / 9);
+        const proteinG = Math.round(weight * proteinPerKg);
+        const carbG = Math.round((calories - (proteinG * 4) - (fatG * 9)) / 4);
+        return { protein: Math.max(proteinG, 50), carbs: Math.max(carbG, 100), fat: Math.max(fatG, 30) };
+    }
+    
+    function saveAllData() {
+        const tdee = calculateTDEE();
         const weight = parseFloat(weightInput.value) || 70;
-
+        
         if (tdee) {
-          const goalCals = getGoalCalories(tdee, currentGoal);
-          const macros   = calculateMacros(goalCals, currentGoal, weight);
-
-          userData = {
-            height:       parseFloat(heightInput.value),
-            weight:       weight,
-            age:          parseInt(ageInput.value),
-            gender:       genderSelect.value,
-            frequency:    parseInt(frequencySelect.value),
-            goal:         currentGoal,
-            tdee:         tdee,
-            goalCalories: goalCals,
-            macros:       macros,
-            foodPrefs:    foodPrefsInput.value,
-            exercisePrefs:exercisePrefsInput.value
-          };
-
-          localStorage.setItem('fitBlueprintData', JSON.stringify(userData));
-          return true;
+            const goalCals = getGoalCalories(tdee, currentGoal);
+            const macros = calculateMacros(goalCals, currentGoal, weight);
+            
+            userData = {
+                height: parseFloat(heightInput.value),
+                weight: weight,
+                age: parseInt(ageInput.value),
+                gender: genderSelect.value,
+                frequency: parseInt(frequencySelect.value),
+                goal: currentGoal,
+                tdee: tdee,
+                goalCalories: goalCals,
+                macros: macros,
+                foodPrefs: foodPrefsInput.value,
+                exercisePrefs: exercisePrefsInput.value
+            };
+            
+            localStorage.setItem('fitBlueprintData', JSON.stringify(userData));
+            return true;
         }
         return false;
-      }
-
-      // ============================================
-      // SERVER SYNC — uses API_URL (no hardcoded localhost)
-      // ============================================
-      async function saveProfileToServer() {
-        const token  = localStorage.getItem('authToken');
-        const userId = localStorage.getItem('userId');
-        if (!token || !userId) return;
-
-        try {
-          const response = await apiFetch(`${API_URL}/user-data/${userId}`, {
-  method: 'POST',
-  body: JSON.stringify({
-    profile:        userData,
-    savedWorkouts:  JSON.parse(localStorage.getItem('savedWorkouts')  || '[]'),
-    workoutHistory: JSON.parse(localStorage.getItem('workoutHistory') || '{}')
-  })
-});
-if (!response) return; // redirected to login
-          
-          console.log('✅ Profile saved to server');
-        } catch (error) {
-          console.warn('Error saving profile to server:', error);
-        }
-      }
-
-      async function loadProfileFromServer() {
-        const token  = localStorage.getItem('authToken');
-        const userId = localStorage.getItem('userId');
-        if (!token || !userId) return;
-
-        try {
-          const response = await apiFetch(`${API_URL}/user-data/${userId}`);
-if (!response) return; // redirected to login
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data.profile && Object.keys(data.profile).length > 0) {
-              const p = data.profile;
-              if (p.height)        heightInput.value        = p.height;
-              if (p.weight)        weightInput.value        = p.weight;
-              if (p.age)           ageInput.value           = p.age;
-              if (p.gender)        genderSelect.value       = p.gender;
-              if (p.frequency)     frequencySelect.value    = p.frequency;
-              if (p.foodPrefs)     foodPrefsInput.value     = p.foodPrefs;
-              if (p.exercisePrefs) exercisePrefsInput.value = p.exercisePrefs;
-              if (p.goal)          setGoal(p.goal);
-              console.log('✅ Profile loaded from server');
-              updateAll();
-            }
-          }
-        } catch (error) {
-          console.warn('Error loading profile from server:', error);
-        }
-      }
-
-      // ============================================
-      // UPDATE UI
-      // ============================================
-      function updateAll() {
+    }
+    
+    function updateAll() {
         updateFabBMI();
-        const tdee   = calculateTDEE();
+        const tdee = calculateTDEE();
         const weight = parseFloat(weightInput.value) || 70;
-
+        
         if (tdee) {
-          const goalCals = getGoalCalories(tdee, currentGoal);
-          const macros   = calculateMacros(goalCals, currentGoal, weight);
-
-          calorieDisplay.textContent  = goalCals.toLocaleString();
-          macroProtein.textContent    = `Protein: ${macros.protein}g`;
-          macroCarbs.textContent      = `Carbs: ${macros.carbs}g`;
-          macroFat.textContent        = `Fat: ${macros.fat}g`;
-
-          saveAllData();
-
-          const freq     = parseInt(frequencySelect.value);
-          const goalText = currentGoal === 'lose' ? 'lose weight' : (currentGoal === 'gain' ? 'gain muscle' : 'maintain weight');
-          planSummaryText.textContent = `You're aiming to ${goalText} with ${freq} workouts/week. Daily target: ${goalCals.toLocaleString()} kcal. Click AI Coach for personalized advice!`;
+            const goalCals = getGoalCalories(tdee, currentGoal);
+            const macros = calculateMacros(goalCals, currentGoal, weight);
+            calorieDisplay.textContent = goalCals.toLocaleString();
+            macroProtein.textContent = `Protein: ${macros.protein}g`;
+            macroCarbs.textContent = `Carbs: ${macros.carbs}g`;
+            macroFat.textContent = `Fat: ${macros.fat}g`;
+            
+            saveAllData();
+            
+            const freq = parseInt(frequencySelect.value);
+            const goalText = currentGoal === 'lose' ? 'lose weight' : (currentGoal === 'gain' ? 'gain muscle' : 'maintain weight');
+            planSummaryText.textContent = `You're aiming to ${goalText} with ${freq} workouts/week. Daily target: ${goalCals.toLocaleString()} kcal. Click AI Coach for personalized advice!`;
         } else {
-          calorieDisplay.textContent  = '--';
-          macroProtein.textContent    = 'Protein: --g';
-          macroCarbs.textContent      = 'Carbs: --g';
-          macroFat.textContent        = 'Fat: --g';
-          planSummaryText.textContent = 'Enter your details above to calculate your personalized plan.';
+            calorieDisplay.textContent = '--';
+            macroProtein.textContent = 'Protein: --g';
+            macroCarbs.textContent = 'Carbs: --g';
+            macroFat.textContent = 'Fat: --g';
+            planSummaryText.textContent = 'Enter your details above to calculate your personalized plan.';
         }
-
+        
         const params = new URLSearchParams({ goal: currentGoal, frequency: frequencySelect.value });
-        workoutNavBtn.href   = `workout.html?${params.toString()}`;
+        workoutNavBtn.href = `workout.html?${params.toString()}`;
         nutritionNavBtn.href = `nutrition.html?${params.toString()}`;
-      }
-
-      function setGoal(goal) {
+    }
+    
+    function setGoal(goal) {
         currentGoal = goal;
         goalButtons.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-goal') === goal));
         updateAll();
         saveAllData();
-      }
-
-      // ============================================
-      // EVENT LISTENERS
-      // ============================================
-      goalButtons.forEach(btn => btn.addEventListener('click', () => setGoal(btn.getAttribute('data-goal'))));
-
-      heightInput.addEventListener('input',        () => { updateAll(); saveAllData(); });
-      weightInput.addEventListener('input',        () => { updateAll(); saveAllData(); });
-      frequencySelect.addEventListener('change',   () => { updateAll(); saveAllData(); });
-      genderSelect.addEventListener('change',      () => { updateAll(); saveAllData(); });
-      ageInput.addEventListener('input',           () => { updateAll(); saveAllData(); });
-      foodPrefsInput.addEventListener('input',     () => { updateAll(); saveAllData(); });
-      exercisePrefsInput.addEventListener('input', () => { updateAll(); saveAllData(); });
-
-      // BMI modal
-      bmiFab.addEventListener('click', () => { syncModalInputs(); bmiModal.classList.add('active'); });
-      modalHeight.addEventListener('input', updateModalBMI);
-      modalWeight.addEventListener('input', updateModalBMI);
-      closeModalBtn.addEventListener('click', () => bmiModal.classList.remove('active'));
-      bmiModal.addEventListener('click', (e) => { if (e.target === bmiModal) bmiModal.classList.remove('active'); });
-
-      // Navigation
-      workoutNavBtn.addEventListener('click', function (e) {
+    }
+    
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+    goalButtons.forEach(btn => btn.addEventListener('click', () => setGoal(btn.getAttribute('data-goal'))));
+    
+    heightInput.addEventListener('input', () => { updateAll(); saveAllData(); });
+    weightInput.addEventListener('input', () => { updateAll(); saveAllData(); });
+    frequencySelect.addEventListener('change', () => { updateAll(); saveAllData(); });
+    genderSelect.addEventListener('change', () => { updateAll(); saveAllData(); });
+    ageInput.addEventListener('input', () => { updateAll(); saveAllData(); });
+    foodPrefsInput.addEventListener('input', () => { updateAll(); saveAllData(); });
+    exercisePrefsInput.addEventListener('input', () => { updateAll(); saveAllData(); });
+    
+    bmiFab.addEventListener('click', () => { syncModalInputs(); bmiModal.classList.add('active'); });
+    modalHeight.addEventListener('input', updateModalBMI);
+    modalWeight.addEventListener('input', updateModalBMI);
+    closeModalBtn.addEventListener('click', () => bmiModal.classList.remove('active'));
+    bmiModal.addEventListener('click', (e) => { if (e.target === bmiModal) bmiModal.classList.remove('active'); });
+    
+    workoutNavBtn.addEventListener('click', function(e) {
         e.preventDefault();
         saveAllData();
         setTimeout(() => {
-          window.location.href = `workout.html?goal=${currentGoal}&frequency=${frequencySelect.value}`;
+            window.location.href = `workout.html?goal=${currentGoal}&frequency=${frequencySelect.value}`;
         }, 150);
-      });
-
-      nutritionNavBtn.addEventListener('click', function (e) {
+    });
+    
+    nutritionNavBtn.addEventListener('click', function(e) {
         e.preventDefault();
         saveAllData();
         setTimeout(() => {
-          window.location.href = `nutrition.html?goal=${currentGoal}&frequency=${frequencySelect.value}`;
+            window.location.href = `nutrition.html?goal=${currentGoal}&frequency=${frequencySelect.value}`;
         }, 150);
-      });
-
-      window.addEventListener('beforeunload', () => saveAllData());
-      window.addEventListener('pagehide',     () => saveAllData());
-      setInterval(() => saveAllData(), 5000);
-
-      // ============================================
-      // AI ASSISTANT
-      // ============================================
-      function getUserContext() {
+    });
+    
+    window.addEventListener('beforeunload', () => saveAllData());
+    window.addEventListener('pagehide', () => saveAllData());
+    setInterval(() => saveAllData(), 5000);
+    
+    // ============================================
+    // AI ASSISTANT
+    // ============================================
+    function getUserContext() {
         const stored = localStorage.getItem('fitBlueprintData');
         if (stored) return JSON.parse(stored);
         return userData;
-      }
-
-      function buildSystemPrompt() {
+    }
+    
+    function buildSystemPrompt() {
         const ctx = getUserContext();
-
+        
         let goalInstructions, repRanges, restTimes, exerciseTypes;
-
+        
         if (ctx.goal === 'gain') {
-          goalInstructions = 'BUILD MUSCLE (Hypertrophy)';
-          repRanges        = '6-12 reps (use heavy weight, 70-85% of 1RM)';
-          restTimes        = '60-90 seconds between sets';
-          exerciseTypes    = 'Compound lifts first (Squat, Deadlift, Bench, Row, OHP), then isolation exercises (curls, extensions, raises)';
+            goalInstructions = 'BUILD MUSCLE (Hypertrophy)';
+            repRanges = '6-12 reps (use heavy weight, 70-85% of 1RM)';
+            restTimes = '60-90 seconds between sets';
+            exerciseTypes = 'Compound lifts first (Squat, Deadlift, Bench, Row, OHP), then isolation exercises';
         } else if (ctx.goal === 'lose') {
-          goalInstructions = 'LOSE FAT (Calorie burn focus)';
-          repRanges        = '12-20 reps (moderate weight, 50-65% of 1RM)';
-          restTimes        = '30-45 seconds between sets (circuit style)';
-          exerciseTypes    = 'Full body movements, cardio bursts, supersets (Burpees, Jump Squats, Kettlebell Swings, Mountain Climbers, Battle Ropes)';
+            goalInstructions = 'LOSE FAT (Calorie burn focus)';
+            repRanges = '12-20 reps (moderate weight, 50-65% of 1RM)';
+            restTimes = '30-45 seconds between sets (circuit style)';
+            exerciseTypes = 'Full body movements, cardio bursts, supersets (Burpees, Jump Squats, Kettlebell Swings, Mountain Climbers)';
         } else {
-          goalInstructions = 'MAINTAIN WEIGHT (Balanced)';
-          repRanges        = '8-15 reps (moderate weight, 60-75% of 1RM)';
-          restTimes        = '45-60 seconds between sets';
-          exerciseTypes    = 'Mix of compound and isolation, 70% strength + 30% cardio';
+            goalInstructions = 'MAINTAIN WEIGHT (Balanced)';
+            repRanges = '8-15 reps (moderate weight, 60-75% of 1RM)';
+            restTimes = '45-60 seconds between sets';
+            exerciseTypes = 'Mix of compound and isolation, 70% strength + 30% cardio';
         }
-
+        
         return `You are FitCoach AI, a certified personal trainer. Create CUSTOM workouts based on the user's goal.
 
 ## USER PROFILE:
@@ -553,10 +471,8 @@ if (!response) return; // redirected to login
 - Height: ${ctx.height || 175}cm
 - Food preferences: ${ctx.foodPrefs || 'none'}
 - Exercise preferences: ${ctx.exercisePrefs || 'none'}
-- Daily calories: ${ctx.goalCalories || 2000} kcal
-- Protein target: ${ctx.macros?.protein || 150}g
 
-## TRAINING PARAMETERS FOR THIS GOAL:
+## TRAINING PARAMETERS:
 - Rep ranges: ${repRanges}
 - Rest periods: ${restTimes}
 - Exercise selection: ${exerciseTypes}
@@ -566,147 +482,120 @@ if (!response) return; // redirected to login
 2. If goal is LOSE FAT: Focus on Burpees, Jump Squats, Mountain Climbers, Kettlebell Swings, Battle Ropes. Use circuits with 12-20 reps.
 3. If goal is MAINTAIN: Mix both styles equally.
 4. Always personalize using the user profile above.
-5. Never suggest foods or exercises the user dislikes.
-6. For workouts: include exercises, sets, and reps.
-7. For recipes: include ingredients with measurements and steps.
-8. Be encouraging and motivational.
-9. Keep responses 150-300 words with clear line breaks.
-10. Only answer fitness and nutrition questions.
-11. Never give identical responses — be unique every time.
-12. There should always be 8 exercises per workout.
+5. For workouts: include exercises, sets, and reps.
+6. For recipes: include ingredients with measurements and steps.
+7. Be encouraging and motivational.
+8. There should always be 7-8 exercises per workout.
 
 Now respond based on the user's ACTUAL goal: ${ctx.goal === 'gain' ? 'MUSCLE GAIN' : (ctx.goal === 'lose' ? 'FAT LOSS' : 'MAINTENANCE')}.`;
-      }
-
-      async function callAI(userMessage) {
+    }
+    
+    async function callAI(userMessage) {
         conversationHistory.push({ role: 'user', content: userMessage });
-
+        
         try {
-          const response = await fetch(`${API_URL}/ai/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              messages:     conversationHistory,
-              systemPrompt: buildSystemPrompt()
-            })
-          });
-
-          if (!response.ok) throw new Error(`API error: ${response.status}`);
-
-          const data  = await response.json();
-          const reply = data.choices[0]?.message?.content || '';
-
-          conversationHistory.push({ role: 'assistant', content: reply });
-          if (conversationHistory.length > 20) conversationHistory = conversationHistory.slice(-20);
-
-          return reply;
+            const response = await fetch(`${API_URL}/ai/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: conversationHistory,
+                    systemPrompt: buildSystemPrompt()
+                })
+            });
+            
+            if (!response.ok) throw new Error(`API error: ${response.status}`);
+            
+            const data = await response.json();
+            const reply = data.choices[0]?.message?.content || '';
+            
+            conversationHistory.push({ role: 'assistant', content: reply });
+            if (conversationHistory.length > 20) conversationHistory = conversationHistory.slice(-20);
+            
+            return reply;
         } catch (err) {
-          console.error('AI error:', err);
-          return 'Sorry, I encountered an error. Please try again.';
+            console.error('AI error:', err);
+            return 'Sorry, I encountered an error. Please try again.';
         }
-      }
-
-      function addMessageToChat(text, sender) {
-        const msgDiv       = document.createElement('div');
-        msgDiv.className   = `message ${sender}`;
+    }
+    
+    function addMessageToChat(text, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}`;
         msgDiv.textContent = text;
         aiChatMessages.appendChild(msgDiv);
         aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
         return msgDiv;
-      }
-
-      function addTypingIndicator() {
-        const typingDiv     = document.createElement('div');
+    }
+    
+    function addTypingIndicator() {
+        const typingDiv = document.createElement('div');
         typingDiv.className = 'message ai typing';
-        typingDiv.id        = 'typingIndicator';
+        typingDiv.id = 'typingIndicator';
         typingDiv.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
         aiChatMessages.appendChild(typingDiv);
         aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
-      }
-
-      function removeTypingIndicator() {
+    }
+    
+    function removeTypingIndicator() {
         const el = document.getElementById('typingIndicator');
         if (el) el.remove();
-      }
-
-      async function sendMessage() {
+    }
+    
+    async function sendMessage() {
         const message = aiChatInput.value.trim();
         if (!message) return;
-
+        
         addMessageToChat(message, 'user');
-        aiChatInput.value    = '';
-        sendAiBtn.disabled   = true;
+        aiChatInput.value = '';
+        sendAiBtn.disabled = true;
         aiChatInput.disabled = true;
         addTypingIndicator();
-
+        
         try {
-          const reply = await callAI(message);
-          removeTypingIndicator();
-          addMessageToChat(reply, 'ai');
+            const reply = await callAI(message);
+            removeTypingIndicator();
+            addMessageToChat(reply, 'ai');
         } catch (err) {
-          removeTypingIndicator();
-          addMessageToChat(`❌ Error: ${err.message}`, 'ai');
+            removeTypingIndicator();
+            addMessageToChat(`❌ Error: ${err.message}`, 'ai');
         }
-
-        sendAiBtn.disabled   = false;
+        
+        sendAiBtn.disabled = false;
         aiChatInput.disabled = false;
         aiChatInput.focus();
-      }
-
-      window.sendMessage = sendMessage;
-      window.sendQuickMessage = async function (quickMsg) {
+    }
+    
+    window.sendMessage = sendMessage;
+    window.sendQuickMessage = async function(quickMsg) {
         aiChatInput.value = quickMsg;
         await sendMessage();
-      };
-
-      aiFab.addEventListener('click', () => { updateAll(); aiModal.classList.add('active'); });
-      closeAiBtn.addEventListener('click', () => aiModal.classList.remove('active'));
-      aiModal.addEventListener('click', (e) => { if (e.target === aiModal) aiModal.classList.remove('active'); });
-async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem('authToken');
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...(options.headers || {})
+    };
+    
+    aiFab.addEventListener('click', () => { updateAll(); aiModal.classList.add('active'); });
+    closeAiBtn.addEventListener('click', () => aiModal.classList.remove('active'));
+    aiModal.addEventListener('click', (e) => { if (e.target === aiModal) aiModal.classList.remove('active'); });
+    
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    const hasSavedData = loadSavedData();
+    updateAll();
+    
+    if (!hasSavedData) {
+        setGoal('lose');
     }
-  });
-
-  if (res.status === 401 || res.status === 403) {
-    // Genuinely rejected token — log out
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('sessionExpiresAt');
-    window.location.href = 'login.html';
-    return null;
-  }
-
-  return res;
-}
-      // ============================================
-      // INIT — check auth, then load data
-      // ============================================
-   function checkAuthAndRedirect() {
-  const token = localStorage.getItem('authToken');
-  const expiresAt = localStorage.getItem('sessionExpiresAt');
-
-  if (!token) {
-    window.location.href = 'login.html';
-    return false;
-  }
-
-  if (expiresAt && Date.now() > parseInt(expiresAt)) {
-    localStorage.clear();
-    window.location.href = 'login.html';
-    return false;
-  }
-
-  return true; // token existe et n'est pas expiré — on fait confiance
-}
-
-    })();
-  </script>
+    
+    // Ajouter bouton logout et afficher nom
+    if (window.auth) {
+        window.auth.addLogoutButton();
+        window.auth.displayUsername();
+        window.auth.startAutoSave();
+    }
+    
+    console.log('🚀 FitBlueprint initialized');
+    
+})();
+</script>
 
   <style>
     .message.typing { display: flex; gap: 5px; align-items: center; padding: 14px 18px; }
