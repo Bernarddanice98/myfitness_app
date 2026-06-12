@@ -64,11 +64,13 @@
 
   <script>
     // ============================================
-    // FIXED: Hardcoded API URL for local development
+    // API URL - MUST MATCH YOUR SERVER
     // ============================================
-    const API_URL = 'http://localhost:3000/api';
+    const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000/api'
+        : 'https://myfitness-app-1-a77k.onrender.com/api';
     
-    // Test server connection immediately
+    // Test server connection
     async function testConnection() {
       const statusDiv = document.getElementById('statusBadge');
       try {
@@ -79,8 +81,8 @@
           return true;
         }
       } catch (error) {
-        statusDiv.innerHTML = '❌ Server not running! Run: node server.js';
-        statusDiv.style.background = 'rgba(244, 67, 54, 0.9)';
+        statusDiv.innerHTML = '⚠️ Local save only (server offline)';
+        statusDiv.style.background = 'rgba(255, 152, 0, 0.9)';
         console.error('Connection error:', error);
         return false;
       }
@@ -98,6 +100,135 @@
       window.location.href = 'workout.html';
     }
     
+    // ============================================
+    // SAVE TO BACKEND (SUPABASE)
+    // ============================================
+    async function saveToServer() {
+      const token = localStorage.getItem('authToken');
+      const userId = localStorage.getItem('userId');
+      
+      if (!token || !userId) {
+        console.log('Not logged in, saving to localStorage only');
+        return false;
+      }
+      
+      try {
+        // First get current user data
+        const response = await fetch(`${API_URL}/user-data/${userId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.log('Session expired');
+            window.location.href = 'login.html';
+          }
+          return false;
+        }
+        
+        const userData = await response.json();
+        let workoutHistory = userData.workoutHistory || {};
+        
+        // If workoutHistory is a string, parse it
+        if (typeof workoutHistory === 'string') {
+          try { workoutHistory = JSON.parse(workoutHistory); } catch(e) { workoutHistory = {}; }
+        }
+        
+        const today = new Date().toISOString().split('T')[0];
+        if (!workoutHistory[today]) workoutHistory[today] = [];
+        
+        // Check if this workout is already saved today
+        const existingIndex = workoutHistory[today].findIndex(w => w.workoutName === workoutData.workoutName);
+        
+        const progressEntry = {
+          id: Date.now(),
+          workoutName: workoutData.workoutName,
+          dayIndex: workoutData.dayIndex,
+          timestamp: new Date().toISOString(),
+          sets: setsStatus,
+          weights: weightsData,
+          reps: repsData
+        };
+        
+        if (existingIndex >= 0) {
+          workoutHistory[today][existingIndex] = progressEntry;
+        } else {
+          workoutHistory[today].push(progressEntry);
+        }
+        
+        // Save back to backend
+        const saveResponse = await fetch(`${API_URL}/user-data/${userId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            profile: userData.profile || {},
+            savedWorkouts: userData.savedWorkouts || [],
+            workoutHistory: workoutHistory
+          })
+        });
+        
+        if (saveResponse.ok) {
+          console.log('✅ Progress saved to database');
+          document.getElementById('statusBadge').innerHTML = '✅ Saved to cloud';
+          document.getElementById('statusBadge').style.background = 'rgba(76, 175, 80, 0.9)';
+          setTimeout(() => {
+            document.getElementById('statusBadge').innerHTML = '✅ Server connected';
+          }, 2000);
+          return true;
+        }
+      } catch (error) {
+        console.error('Save to server error:', error);
+      }
+      return false;
+    }
+    
+    // Save to localStorage and server
+    function saveProgress() {
+      const savedKey = `workout_progress_${workoutData.dayIndex}_${workoutData.workoutName}`;
+      localStorage.setItem(savedKey, JSON.stringify({
+        setsStatus: setsStatus,
+        weightsData: weightsData,
+        repsData: repsData
+      }));
+      
+      // Also save to server
+      saveToServer();
+      showNotification('Progress saved!', 'success');
+    }
+    
+    async function markWorkoutComplete() {
+      const token = localStorage.getItem('authToken');
+      const userId = localStorage.getItem('userId');
+      
+      if (token && userId && workoutData.workoutName !== undefined) {
+        try {
+          const response = await fetch(`${API_URL}/workout-complete/${userId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              workoutName: workoutData.workoutName,
+              dayIndex: workoutData.dayIndex,
+              date: new Date().toISOString()
+            })
+          });
+          
+          if (response.ok) {
+            console.log('✅ Workout marked complete in database');
+            return true;
+          }
+        } catch(e) {
+          console.error('Error marking complete:', e);
+        }
+      }
+      return false;
+    }
+    
     function loadSavedProgress() {
       const savedKey = `workout_progress_${workoutData.dayIndex}_${workoutData.workoutName}`;
       const saved = localStorage.getItem(savedKey);
@@ -108,99 +239,6 @@
           weightsData = data.weightsData || {};
           repsData = data.repsData || {};
         } catch(e) {}
-      }
-    }
-    
-    function saveProgress() {
-      const savedKey = `workout_progress_${workoutData.dayIndex}_${workoutData.workoutName}`;
-      localStorage.setItem(savedKey, JSON.stringify({
-        setsStatus: setsStatus,
-        weightsData: weightsData,
-        repsData: repsData
-      }));
-      
-      saveToServer();
-      // When user completes a workout, call this:
-async function markWorkoutComplete() {
-    const token = localStorage.getItem('authToken');
-    const userId = localStorage.getItem('userId');
-    const workoutData = JSON.parse(localStorage.getItem('currentWorkout') || '{}');
-    
-    if (token && userId && workoutData.workoutName !== undefined) {
-        try {
-            await fetch(`${API_URL}/workout-complete/${userId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    workoutName: workoutData.workoutName,
-                    dayIndex: workoutData.dayIndex,
-                    date: new Date().toISOString()
-                })
-            });
-            console.log('✅ Workout marked complete in database');
-        } catch(e) {}
-    }
-    
-    // Also save progress details
-    await fetch(`${API_URL}/workout-progress/${userId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-            workoutData: workoutData,
-            setsStatus: completedSets,
-            weightsData: weightsUsed,
-            repsData: repsPerformed
-        })
-    });
-}
-      showNotification('Progress saved!', 'success');
-    }
-    
-    async function saveToServer() {
-      const token = localStorage.getItem('authToken');
-      const userId = localStorage.getItem('userId');
-      
-      if (!token || !userId) {
-        console.log('Not logged in, skipping server save');
-        return;
-      }
-      
-      const progressData = {
-        workoutData: { day: { name: workoutData.day.name } },
-        setsStatus: setsStatus,
-        weightsData: weightsData,
-        repsData: repsData
-      };
-      
-      try {
-        const response = await fetch(`${API_URL}/workout-progress/${userId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'X-User-Id': userId
-          },
-          body: JSON.stringify(progressData)
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ Synced to server:', result);
-          document.getElementById('statusBadge').innerHTML = '✅ Last sync OK';
-          setTimeout(() => {
-            document.getElementById('statusBadge').innerHTML = '✅ Server connected';
-          }, 2000);
-        } else {
-          console.error('Server error:', response.status);
-        }
-      } catch (error) {
-        console.error('Failed to sync:', error.message);
       }
     }
     
@@ -356,7 +394,7 @@ async function markWorkoutComplete() {
     
     document.getElementById('workoutTitle').textContent = workoutData.day.name;
     
-    document.getElementById('completeWorkoutBtn').addEventListener('click', () => {
+    document.getElementById('completeWorkoutBtn').addEventListener('click', async () => {
       let allCompleted = true;
       for (const exerciseId in setsStatus) {
         if (setsStatus[exerciseId] && setsStatus[exerciseId].some(completed => !completed)) {
@@ -366,8 +404,16 @@ async function markWorkoutComplete() {
       }
       
       if (allCompleted) {
+        // Mark as complete in database
+        await markWorkoutComplete();
+        
+        // Save final progress
+        await saveToServer();
+        
+        // Clear local progress
         const savedKey = `workout_progress_${workoutData.dayIndex}_${workoutData.workoutName}`;
         localStorage.removeItem(savedKey);
+        
         alert('🎉 Great job! Workout completed! 💪');
         window.location.href = 'workout.html';
       } else {
@@ -377,6 +423,7 @@ async function markWorkoutComplete() {
     
     document.getElementById('saveProgressBtn').addEventListener('click', () => {
       saveProgress();
+      showNotification('Progress saved to cloud!', 'success');
     });
     
     renderExercises();
