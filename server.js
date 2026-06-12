@@ -508,7 +508,6 @@ app.get('/api/user-data/:userId', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user data' });
   }
 });
-
 app.post('/api/user-data/:userId', authenticateToken, async (req, res) => {
   const userId = req.params.userId;
   const { profile, savedWorkouts, workoutHistory } = req.body;
@@ -522,11 +521,17 @@ app.post('/api/user-data/:userId', authenticateToken, async (req, res) => {
            saved_workouts = EXCLUDED.saved_workouts,
            workout_history = EXCLUDED.workout_history,
            updated_at = CURRENT_TIMESTAMP`,
-      [userId, profile || {}, savedWorkouts || [], workoutHistory || {}]
+      [
+        userId,
+        JSON.stringify(profile || {}),       // ← add JSON.stringify
+        JSON.stringify(savedWorkouts || []),  // ← add JSON.stringify
+        JSON.stringify(workoutHistory || {})  // ← add JSON.stringify
+      ]
     );
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Save user data error:', error); // ← make sure this is there
+    res.status(500).json({ error: error.message }); // ← return the actual error
   }
 });
 
