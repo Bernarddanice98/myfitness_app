@@ -136,13 +136,32 @@
 
   <script>
     // ============================================
-    // DEFINE API_URL
+    // DEFINE API_URL - AUTO DETECT ENVIRONMENT
     // ============================================
-    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3000/api'
-        : 'https://your-production-api.com/api';
+        : 'https://myfitness-app-1-a77k.onrender.com/api';
     
     console.log('🌐 API_URL:', API_URL);
+    
+    // ============================================
+    // AUTH CHECK - Redirect if not logged in
+    // ============================================
+    (function checkAuth() {
+      const token = localStorage.getItem('authToken');
+      const expiresAt = localStorage.getItem('sessionExpiresAt');
+      
+      if (!token) {
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      if (expiresAt && Date.now() > parseInt(expiresAt)) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+        return;
+      }
+    })();
     
     (function() {
       const dayCardsContainer = document.getElementById('dayCardsContainer');
@@ -152,9 +171,6 @@
       const sidebarNav = document.getElementById('sidebarNav');
       const overlay = document.getElementById('overlay');
       const closeSidebarBtn = document.getElementById('closeSidebarBtn');
-
-      const OPENROUTER_API_KEY = OPENROUTER_API_KEY;
-      const OPENROUTER_MODEL = "gpt-3.5-turbo";
 
       const urlParams = new URLSearchParams(window.location.search);
       let goal = urlParams.get('goal') || 'lose';
@@ -281,7 +297,7 @@
       }
 
       // ============================================
-      // MAIN RENDER WORKOUT (SIMPLE VERSION - NO COMPLETION CHECK)
+      // MAIN RENDER WORKOUT
       // ============================================
       function renderWorkout(workoutPlan = null) {
         currentWorkoutPlan = workoutPlan;
@@ -521,113 +537,56 @@
         }
       };
       
-      // AI Workout Generation
-     async function generateAIWorkout() {
-  const aiBtn = document.getElementById('sidebarAiGenerateBtn');
-  const originalText = aiBtn.innerHTML;
-  aiBtn.disabled = true;
-  aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-  
-  const systemPrompt = `You are an expert personal trainer. 
-
-EXERCISE DATABASE (USE ONLY THESE):
-
-CHEST: Barbell Bench Press, Dumbbell Bench Press, Smith Machine Bench Press, Pec Deck Fly, Low to High Cable Fly, High to Low Cable Fly, Incline Barbell Bench Press, Incline Dumbbell Press, Smith Machine Incline Press, Push-ups
-
-BACK: Lat Pulldown, Cable Row, Barbell Row, Dumbbell Row, Cable Pulldown, Machine Row, Pull-ups, Close Grip Pulldown, Mid Grip Pulldown
-
-LEGS: Barbell Squat, Leg Extension, Leg Press, Hack Squat, Romanian Deadlift, Split Squat, Hamstring Curls, Calf Raises
-
-BICEPS: EZ Bar Curl, Dumbbell Curl, Preacher Curl, Incline Curl, Bayesian Cable Curl
-
-TRICEPS: Tricep Pushdown, Overhead Cable Triceps, Skull Crusher, Cable Kickback
-
-⚠️ CRITICAL RULES:
-- EACH DAY MUST HAVE EXACTLY 7 EXERCISES (NO LESS, NO MORE)
-- ONLY use exercises from the list above
-
-Create a ${frequency}x/week workout plan for ${goal} weight.
-Each day needs EXACTLY 7 exercises.
-
-Return JSON format:
-{
-  "days": [
-    {
-      "name": "Day name (e.g., Push Day, Pull Day, Leg Day)",
-      "exercises": [
-        { "name": "Exercise name (from the list only)", "sets": 3, "reps": "10-12" },
-        { "name": "Exercise name", "sets": 4, "reps": "8-10" },
-        { "name": "Exercise name", "sets": 3, "reps": "12-15" },
-        { "name": "Exercise name", "sets": 3, "reps": "15-20" },
-        { "name": "Exercise name", "sets": 3, "reps": "10-12" },
-        { "name": "Exercise name", "sets": 3, "reps": "12-15" },
-        { "name": "Exercise name", "sets": 3, "reps": "15-20" }
-      ]
-    }
-  ]
-}
-
-IMPORTANT: Each "exercises" array MUST have EXACTLY 7 items.`;
-
-  const userPrompt = `Create a ${frequency}x/week workout plan for goal: ${goal} weight.
-Each workout day MUST have Exactly 7 exercises. for push pull legs split mix the chest and triceps exercises in push day, back and biceps exercises in pull day, legs exercises in leg day.
-Use ONLY exercises from the provided list.
-Return ONLY valid JSON.`;
-
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'HTTP-Referer': window.location.href
-      },
-      body: JSON.stringify({
-        model: OPENROUTER_MODEL,
-        max_tokens: 2000,
-        temperature: 0.7,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ]
-      })
-    });
-
-    const data = await response.json();
-    let aiResponse = data.choices[0]?.message?.content || '';
-    aiResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const workoutPlan = JSON.parse(jsonMatch[0]);
-      if (workoutPlan.days) {
-        // Validate each day has exactly 7 exercises
-        let isValid = true;
-        for (const day of workoutPlan.days) {
-          if (!day.exercises || day.exercises.length !== 7) {
-            isValid = false;
-            console.warn(`Day "${day.name}" has ${day.exercises?.length || 0} exercises (should be 7)`);
-          }
-        }
+      // ============================================
+      // AI WORKOUT GENERATION
+      // ============================================
+      async function generateAIWorkout() {
+        const aiBtn = document.getElementById('sidebarAiGenerateBtn');
+        const originalText = aiBtn.innerHTML;
+        aiBtn.disabled = true;
+        aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
         
-        if (isValid) {
-          renderWorkout(workoutPlan);
-          showNotification('AI workout generated with 7 exercises per day!', 'success');
-        } else {
-          showNotification('AI generated invalid workout. Using local plan.', 'error');
+        const url = `${API_URL}/ai/generate-workout`;
+        console.log('🔍 Calling API URL:', url);
+        
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              goal: goal,
+              frequency: frequency,
+              userProfile: userProfile
+            })
+          });
+          
+          console.log('🔍 Response status:', response.status);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          
+          const data = await response.json();
+          console.log('🔍 Response data:', data);
+          
+          if (data.success && data.workoutPlan) {
+            renderWorkout(data.workoutPlan);
+            showNotification('AI workout generated!', 'success');
+          } else {
+            showNotification('AI failed: ' + (data.error || 'Unknown error'), 'error');
+            renderWorkout(null);
+          }
+        } catch (error) {
+          console.error('🔍 Fetch error:', error);
+          showNotification('AI failed, using local plan', 'error');
           renderWorkout(null);
+        } finally {
+          aiBtn.disabled = false;
+          aiBtn.innerHTML = originalText;
+          closeSidebar();
         }
       }
-    }
-  } catch (error) {
-    console.error(error);
-    showNotification('AI failed, using local plan', 'error');
-    renderWorkout(null);
-  } finally {
-    aiBtn.disabled = false;
-    aiBtn.innerHTML = originalText;
-    closeSidebar();
-  }
-}
+      
       function showNotification(message, type) {
         const notification = document.createElement('div');
         notification.style.cssText = `position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: ${type === 'success' ? '#4caf50' : '#ff9800'}; color: white; padding: 12px 24px; border-radius: 8px; z-index: 2000; font-size: 14px;`;
