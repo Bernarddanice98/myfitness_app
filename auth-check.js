@@ -12,7 +12,7 @@
             sessionExpiresAt: localStorage.getItem('sessionExpiresAt')
         };
     }
-    
+    //just adding this 
     // Check if session is still valid (2 hours)
     function isSessionValid() {
         const expiresAt = localStorage.getItem('sessionExpiresAt');
