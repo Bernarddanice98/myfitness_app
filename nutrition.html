@@ -10,387 +10,368 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 1.5rem;
+      margin: 0;
     }
 
     .page {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 30px;
-      padding: 25px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 550px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 2.8rem;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.08), 0 10px 25px rgba(0, 20, 40, 0.06);
+      padding: 2rem 1.8rem 2.2rem;
+      margin-top: 1rem;
     }
 
     .back-header {
       display: flex;
       align-items: center;
-      gap: 15px;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #f0f0f0;
+      gap: 1rem;
+      margin-bottom: 1.8rem;
     }
-
     .back-btn {
       background: #667eea;
       color: white;
       text-decoration: none;
-      padding: 8px 15px;
+      padding: 10px 15px;
       border-radius: 10px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      transition: all 0.2s;
+      gap: 5px;
+      transition: 0.2s;
     }
-
     .back-btn:hover {
       background: #764ba2;
       transform: translateX(-3px);
     }
-
     .back-header h2 {
-      color: #333;
-      font-size: 1.4rem;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1a1e2b;
     }
 
     .goal-badge {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 1.5rem;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
       color: white;
-      padding: 12px;
-      border-radius: 20px;
       text-align: center;
-      margin-bottom: 20px;
       font-weight: bold;
     }
 
     .category-tabs {
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 0.5rem;
       flex-wrap: wrap;
+      margin-bottom: 1rem;
     }
 
     .category-tab {
-      background: #f0f0f0;
-      padding: 8px 16px;
-      border-radius: 30px;
+      background: #e5e7eb;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #374151;
       cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      transition: all 0.2s;
-      color: #666;
+      transition: 0.2s;
     }
 
     .category-tab.active {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #667eea;
       color: white;
     }
 
     .category-tab:hover {
+      background: #764ba2;
+      color: white;
       transform: translateY(-2px);
-      background: #e0e0e0;
     }
 
     .tap-hint {
-      text-align: center;
-      font-size: 12px;
-      color: #999;
-      margin-bottom: 15px;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-bottom: 1rem;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 5px;
+      gap: 0.3rem;
     }
 
-    .ai-recipe-btn {
-      width: 100%;
-      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 15px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 20px;
-      transition: all 0.2s;
+    #recipesContainer {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
     }
 
-    .ai-recipe-btn:hover {
-      transform: scale(1.02);
-      box-shadow: 0 5px 15px rgba(255,152,0,0.3);
-    }
-
-    .ai-recipe-btn:disabled {
-      opacity: 0.6;
-      transform: none;
-    }
-
-    /* Recipe Cards */
     .recipe-card {
-      background: white;
-      border-radius: 20px;
-      margin-bottom: 16px;
+      background: #f8fafd;
+      border: 1px solid #e5e7eb;
+      border-radius: 1.2rem;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       transition: all 0.3s ease;
       cursor: pointer;
-      border: 1px solid #eee;
     }
 
     .recipe-card.expanded {
-      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      background: #1e1b4b;
+      color: white;
+      border-color: #1e1b4b;
+      box-shadow: 0 12px 24px rgba(30, 27, 75, 0.3);
     }
 
     .recipe-front {
-      padding: 18px;
-      background: white;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
 
     .recipe-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 8px;
+      align-items: flex-start;
     }
 
     .recipe-header h4 {
       font-size: 1rem;
-      color: #333;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .recipe-card.expanded .recipe-header h4 {
+      color: white;
     }
 
     .macro-badge {
-      background: #ff9800;
+      background: #eef2ff;
+      color: #4f46e5;
+      padding: 0.3rem 0.8rem;
+      border-radius: 1rem;
+      font-weight: 700;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .recipe-card.expanded .macro-badge {
+      background: rgba(255,255,255,0.2);
       color: white;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: bold;
     }
 
     .recipe-macros {
       display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
+      gap: 0.8rem;
       flex-wrap: wrap;
     }
 
     .macro-pill {
-      background: #f0f0ff;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      color: #667eea;
-      font-weight: 500;
+      background: #e5e7eb;
+      padding: 0.3rem 0.7rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .recipe-card.expanded .macro-pill {
+      background: rgba(255,255,255,0.15);
+      color: #e0e7ff;
     }
 
     .expand-hint {
-      text-align: center;
-      font-size: 11px;
-      color: #aaa;
-      margin-top: 8px;
+      font-size: 0.7rem;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.2rem;
+    }
+
+    .recipe-card.expanded .expand-hint {
+      color: #818cf8;
     }
 
     .recipe-expandable {
       max-height: 0;
       overflow: hidden;
       transition: max-height 0.4s ease;
-      background: #f9f9ff;
     }
 
     .recipe-card.expanded .recipe-expandable {
-      max-height: 800px;
+      max-height: 600px;
     }
 
     .recipe-content {
-      padding: 18px;
-      border-top: 1px solid #eee;
-    }
-
-    .recipe-section {
-      margin-bottom: 18px;
+      padding: 0 1.2rem 1.2rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
     }
 
     .recipe-section h5 {
-      color: #667eea;
-      margin-bottom: 10px;
-      font-size: 13px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #a5b4fc;
+      margin-bottom: 0.4rem;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 0.3rem;
     }
 
     .ingredient-list, .instruction-list {
-      margin-left: 20px;
-      color: #555;
-      font-size: 13px;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
     }
 
-    .ingredient-list li, .instruction-list li {
-      margin: 6px 0;
+    .ingredient-list li {
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #e0e7ff;
     }
 
     .ingredient-list li i {
-      font-size: 6px;
-      margin-right: 8px;
-      color: #667eea;
-      vertical-align: middle;
+      font-size: 0.6rem;
+      color: #818cf8;
+    }
+
+    .instruction-list {
+      counter-reset: step;
     }
 
     .instruction-list li {
-      margin: 8px 0;
+      font-size: 0.8rem;
+      color: #e0e7ff;
+      display: flex;
+      gap: 0.5rem;
+      counter-increment: step;
+      line-height: 1.4;
+    }
+
+    .instruction-list li::before {
+      content: counter(step);
+      background: #4f46e5;
+      color: white;
+      min-width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .tips-card {
+      background: #6641e9;
+      border-radius: 1.2rem;
+      padding: 1.2rem;
+      margin-top: 1rem;
+      color: white;
+    }
+
+    .tips-card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .tips-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .tips-card li {
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .ai-recipe-btn {
+      background: #ff9800;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      width: 100%;
+      transition: 0.2s;
+    }
+
+    .ai-recipe-btn:hover {
+      background: #e68900;
+      transform: translateY(-2px);
+    }
+
+    .ai-recipe-btn:disabled {
+      opacity: 0.6;
+      transform: none;
+      cursor: not-allowed;
     }
 
     .save-recipe-btn {
       background: #4caf50;
       color: white;
       border: none;
-      padding: 10px 20px;
-      border-radius: 25px;
+      padding: 8px 16px;
+      border-radius: 20px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 12px;
       margin-top: 10px;
-      width: 100%;
-      transition: all 0.2s;
+      transition: 0.2s;
     }
 
     .save-recipe-btn:hover {
-      background: #43a047;
+      background: #45a049;
       transform: scale(0.98);
     }
 
-    /* Source Link */
-    .recipe-source {
-      margin-top: 12px;
-      padding-top: 10px;
-      border-top: 1px solid #e0e0e0;
-      font-size: 11px;
-      text-align: center;
-    }
-
-    .recipe-source a {
-      color: #667eea;
-      text-decoration: none;
-    }
-
-    .recipe-source a:hover {
-      text-decoration: underline;
-    }
-
-    /* Loading State */
     .loading-spinner {
       text-align: center;
-      padding: 40px;
-    }
-
-    .loading-spinner i {
-      font-size: 40px;
+      padding: 2rem;
       color: #667eea;
-      animation: spin 1s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Tips Card */
-    .tips-card {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border-radius: 20px;
-      padding: 20px;
-      margin-top: 20px;
-      color: white;
-    }
-
-    .tips-card h3 {
-      margin-bottom: 12px;
-      font-size: 1.1rem;
-    }
-
-    .tips-card ul {
-      margin-left: 20px;
-    }
-
-    .tips-card li {
-      margin: 8px 0;
-      list-style: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .tips-card li i {
-      color: #ff9800;
-    }
-
-    /* No Results */
     .no-results {
       text-align: center;
-      padding: 40px;
-      color: #999;
+      padding: 2rem;
+      color: #9ca3af;
     }
 
-    /* Modal for recipe detail */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      70% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
     }
 
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-content {
-      background: white;
-      border-radius: 25px;
-      padding: 20px;
-      width: 90%;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-
-    .modal-header h3 {
-      color: #667eea;
-    }
-
-    .close-modal {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: #999;
+    @media (max-width: 450px) {
+      .page {
+        padding: 1.5rem 1.2rem;
+      }
     }
   </style>
 </head>
@@ -440,19 +421,10 @@
     </div>
   </div>
 
-  <!-- Recipe Detail Modal -->
-  <div class="modal" id="recipeModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modalTitle">Recipe Details</h3>
-        <button class="close-modal" onclick="closeModal()">&times;</button>
-      </div>
-      <div id="modalBody"></div>
-    </div>
-  </div>
-
   <script>
-    // API Configuration
+    // ============================================
+    // API CONFIGURATION
+    // ============================================
     const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3000/api'
         : 'https://myfitness-app-1-a77k.onrender.com/api';
@@ -461,7 +433,7 @@
     let currentGoal = 'lose';
     let savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
 
-    // Load user goal
+    // Load user goal from localStorage
     const storedData = localStorage.getItem('fitBlueprintData');
     if (storedData) {
       try {
@@ -473,269 +445,77 @@
     }
 
     // ============================================
-    // WEB RECIPE API - Fetch real recipes from TheMealDB + Spoonacular simulation
-    // Using free public API: TheMealDB (no API key required)
+    // FETCH RECIPES FROM YOUR BACKEND (FIXED)
     // ============================================
-    
-    async function fetchRecipesFromWeb(category) {
+    async function fetchRecipesFromBackend(category) {
       try {
-        // Map categories to search queries
         const queryMap = {
           'high protein': 'chicken',
-          'low carb': 'vegetable',
-          'quick': 'quick',
-          'breakfast': 'breakfast',
-          'healthy': 'healthy'
+          'low carb': 'vegetable', 
+          'quick': 'pasta',
+          'breakfast': 'eggs',
+          'healthy': 'quinoa'
         };
         
         const searchQuery = queryMap[category] || 'healthy';
         
-        // Use TheMealDB API (free, no key needed)
-        const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${searchQuery}`);
+        // Call YOUR backend endpoint - this will search TheMealDB + fallbacks
+        const response = await fetch(`${API_URL}/ai/search-recipes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            query: searchQuery, 
+            goal: currentGoal 
+          })
+        });
+        
         const data = await response.json();
         
-        if (data.meals && data.meals.length > 0) {
-          // Transform meals into our recipe format
-          const recipes = data.meals.slice(0, 8).map(meal => ({
-            id: meal.idMeal,
-            name: meal.strMeal,
-            calories: Math.floor(Math.random() * 300) + 350, // Estimate calories
-            protein: Math.floor(Math.random() * 20) + 20,
-            carbs: Math.floor(Math.random() * 30) + 20,
-            fat: Math.floor(Math.random() * 15) + 8,
-            type: category,
-            sourceUrl: meal.strSource || `https://www.themealdb.com/meal/${meal.idMeal}`,
-            thumbnail: meal.strMealThumb,
-            // Extract ingredients
-            ingredients: extractIngredients(meal),
-            instructions: extractInstructions(meal)
-          }));
-          
-          return recipes;
+        if (data.success && data.recipes && data.recipes.length > 0) {
+          console.log(`✅ Got ${data.recipes.length} recipes from ${data.source || 'backend'}`);
+          return data.recipes;
         }
         
-        // Fallback: Use free recipe API endpoint (Edamam demo)
-        return await fetchFromEdamam(category);
+        // Fallback to local recipes if backend fails
+        console.log('⚠️ Backend returned no recipes, using fallback');
+        return getLocalFallbackRecipes(category);
         
       } catch (error) {
-        console.error('Error fetching from TheMealDB:', error);
-        return await fetchFromEdamam(category);
+        console.error('❌ Backend fetch error:', error);
+        return getLocalFallbackRecipes(category);
       }
     }
     
-    function extractIngredients(meal) {
-      const ingredients = [];
-      for (let i = 1; i <= 20; i++) {
-        const ingredient = meal[`strIngredient${i}`];
-        const measure = meal[`strMeasure${i}`];
-        if (ingredient && ingredient.trim() !== '') {
-          ingredients.push(`${measure ? measure + ' ' : ''}${ingredient}`);
-        }
-      }
-      return ingredients.length > 0 ? ingredients : ['Chicken breast', 'Olive oil', 'Salt & pepper', 'Garlic', 'Fresh herbs'];
-    }
-    
-    function extractInstructions(meal) {
-      if (meal.strInstructions) {
-        // Split instructions into steps
-        const steps = meal.strInstructions.split(/\.\s+/).filter(s => s.length > 20);
-        return steps.slice(0, 6).map(s => s.trim() + (s.endsWith('.') ? '' : '.'));
-      }
-      return [
-        "Prepare all ingredients as listed.",
-        "Follow standard cooking method for this dish.",
-        "Cook until properly done.",
-        "Serve hot and enjoy!"
-      ];
-    }
-    
-    async function fetchFromEdamam(category) {
-      try {
-        // Edamam API with demo app_id/key (limited but works for demo)
-        // Using their public demo endpoint - free tier
-        const query = category === 'high protein' ? 'chicken' : 
-                     (category === 'low carb' ? 'salad' :
-                     (category === 'quick' ? 'pasta' :
-                     (category === 'breakfast' ? 'eggs' : 'healthy')));
-        
-        // Free recipe search API (no auth needed - using a public proxy)
-        const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${category === 'breakfast' ? 'Breakfast' : 'Dinner'}`);
-        const data = await response.json();
-        
-        if (data.meals && data.meals.length > 0) {
-          return await fetchDetailedMeals(data.meals.slice(0, 6));
-        }
-        
-        // Ultimate fallback - local nutritious recipes
-        return getLocalRecipeFallback(category);
-        
-      } catch (error) {
-        console.error('Edamam fallback error:', error);
-        return getLocalRecipeFallback(category);
-      }
-    }
-    
-    async function fetchDetailedMeals(meals) {
-      const detailedRecipes = [];
-      for (const meal of meals.slice(0, 5)) {
-        try {
-          const detailRes = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${meal.idMeal}`);
-          const detailData = await detailRes.json();
-          if (detailData.meals && detailData.meals[0]) {
-            const fullMeal = detailData.meals[0];
-            detailedRecipes.push({
-              id: fullMeal.idMeal,
-              name: fullMeal.strMeal,
-              calories: Math.floor(Math.random() * 250) + 320,
-              protein: Math.floor(Math.random() * 20) + 18,
-              carbs: Math.floor(Math.random() * 35) + 15,
-              fat: Math.floor(Math.random() * 15) + 6,
-              type: currentCategory,
-              sourceUrl: fullMeal.strSource || `https://www.themealdb.com/meal/${fullMeal.idMeal}`,
-              thumbnail: fullMeal.strMealThumb,
-              ingredients: extractIngredients(fullMeal),
-              instructions: extractInstructions(fullMeal)
-            });
-          }
-        } catch(e) { continue; }
-      }
-      return detailedRecipes.length > 0 ? detailedRecipes : getLocalRecipeFallback(currentCategory);
-    }
-    
-    function getLocalRecipeFallback(category) {
+    // Local fallback recipes (beautiful & nutritious)
+    function getLocalFallbackRecipes(category) {
       const fallbacks = {
         'high protein': [
-          { name: "Grilled Chicken Breast", calories: 385, protein: 42, carbs: 0, fat: 22, ingredients: ["200g chicken breast", "1 tbsp olive oil", "Salt, pepper, paprika"], instructions: ["Season chicken with spices", "Grill 6-7 mins each side", "Rest for 5 mins before serving"] },
-          { name: "Protein Power Bowl", calories: 450, protein: 38, carbs: 45, fat: 14, ingredients: ["150g quinoa", "180g tofu/chicken", "Avocado", "Mixed greens"], instructions: ["Cook quinoa", "Grill protein", "Assemble bowl"] }
+          { name: "Grilled Chicken & Quinoa Bowl", calories: 450, protein: 42, carbs: 35, fat: 15, ingredients: ["200g chicken breast", "100g quinoa", "50g avocado", "Mixed greens", "Lemon vinaigrette"], instructions: ["Season chicken with salt and pepper", "Grill chicken 6-8 min per side", "Cook quinoa according to package", "Assemble bowl with greens, quinoa, chicken", "Top with avocado and dressing"] },
+          { name: "Protein Power Smoothie", calories: 380, protein: 35, carbs: 40, fat: 10, ingredients: ["1 scoop protein powder", "1 banana", "200ml almond milk", "1 tbsp peanut butter", "Ice cubes"], instructions: ["Add all ingredients to blender", "Blend until smooth", "Pour and enjoy immediately"] }
         ],
         'low carb': [
-          { name: "Zucchini Noodles with Pesto", calories: 320, protein: 12, carbs: 12, fat: 28, ingredients: ["2 zucchinis", "3 tbsp pesto", "Cherry tomatoes", "Parmesan"], instructions: ["Spiralize zucchini", "Sauté for 2 mins", "Mix with pesto"] }
+          { name: "Zucchini Noodle Pasta", calories: 320, protein: 25, carbs: 15, fat: 18, ingredients: ["2 zucchinis (spiralized)", "150g ground turkey", "1/2 cup marinara sauce", "2 tbsp olive oil", "Garlic"], instructions: ["Spiralize zucchinis into noodles", "Cook ground turkey in pan", "Add garlic and sauce", "Add zucchini noodles, cook 2-3 min", "Season and serve"] },
+          { name: "Cauliflower Rice Bowl", calories: 290, protein: 22, carbs: 18, fat: 14, ingredients: ["200g cauliflower rice", "150g shrimp", "Bell peppers", "Soy sauce", "Egg"], instructions: ["Sauté cauliflower rice", "Cook shrimp with vegetables", "Add soy sauce and egg", "Stir-fry everything together"] }
         ],
         'quick': [
-          { name: "5-Minute Tuna Wrap", calories: 350, protein: 28, carbs: 25, fat: 16, ingredients: ["1 can tuna", "Greek yogurt", "Whole wheat wrap", "Lettuce"], instructions: ["Mix tuna with yogurt", "Spread on wrap", "Add lettuce and roll"] }
+          { name: "5-Minute Tuna Salad", calories: 350, protein: 30, carbs: 10, fat: 20, ingredients: ["1 can tuna", "2 tbsp Greek yogurt", "1 tbsp mustard", "Celery, onion", "Salt and pepper"], instructions: ["Drain tuna", "Mix with Greek yogurt and mustard", "Add chopped celery and onion", "Season to taste", "Serve with lettuce wraps"] }
         ],
         'breakfast': [
-          { name: "Overnight Oats", calories: 380, protein: 18, carbs: 52, fat: 12, ingredients: ["50g oats", "200ml milk", "1 scoop protein", "Berries"], instructions: ["Mix all ingredients", "Refrigerate overnight", "Top with berries"] }
+          { name: "Overnight Oats", calories: 400, protein: 20, carbs: 55, fat: 12, ingredients: ["50g rolled oats", "200ml milk", "1 scoop protein powder", "1 tbsp chia seeds", "Berries"], instructions: ["Mix all ingredients in a jar", "Refrigerate overnight", "Top with berries", "Enjoy cold or warm"] },
+          { name: "Greek Yogurt Parfait", calories: 320, protein: 24, carbs: 35, fat: 8, ingredients: ["200g Greek yogurt", "30g granola", "Mixed berries", "1 tbsp honey", "Chia seeds"], instructions: ["Layer yogurt in a glass", "Add granola and berries", "Drizzle with honey", "Top with chia seeds"] }
         ],
         'healthy': [
-          { name: "Quinoa Salmon Bowl", calories: 520, protein: 35, carbs: 45, fat: 24, ingredients: ["150g salmon", "100g quinoa", "Asparagus", "Lemon"], instructions: ["Cook quinoa", "Pan-sear salmon", "Steam asparagus", "Assemble bowl"] }
+          { name: "Quinoa Salmon Bowl", calories: 520, protein: 35, carbs: 45, fat: 24, ingredients: ["150g salmon", "100g quinoa", "Asparagus", "Lemon", "Olive oil"], instructions: ["Cook quinoa according to package", "Pan-sear salmon skin-side down", "Steam asparagus until tender", "Assemble bowl with lemon squeeze"] }
         ]
       };
       
-      const catFallbacks = fallbacks[category] || fallbacks['high protein'];
-      return catFallbacks.map((fb, idx) => ({
-        id: `fallback_${idx}`,
-        ...fb,
-        type: category,
-        sourceUrl: "#",
-        instructions: fb.instructions || ["Prepare all ingredients", "Cook according to preference", "Serve and enjoy!"]
-      }));
+      const catRecipes = fallbacks[category] || fallbacks['healthy'];
+      return catRecipes.map((fb, idx) => ({ ...fb, id: `local_${idx}`, sourceUrl: "#" }));
     }
-    
+
     // ============================================
-    // AI WEB SEARCH FOR RECIPES (using backend proxy)
+    // DISPLAY RECIPES
     // ============================================
-    async function searchWebRecipes(query) {
-      const btn = document.getElementById('aiRecipeBtn');
-      const container = document.getElementById('recipesContainer');
-      
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 🌐 Searching the web for recipes...';
-      
-      container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Scanning online recipe databases...</p></div>';
-      
-      try {
-        // First try to get from TheMealDB (real recipes)
-        const searchTerm = `${currentGoal === 'lose' ? 'healthy low calorie' : 'high protein'} ${query} recipe`;
-        
-        // Fetch from multiple meal DBs
-        const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`);
-        const data = await response.json();
-        
-        if (data.meals && data.meals.length > 0) {
-          const detailed = await fetchDetailedMeals(data.meals.slice(0, 4));
-          if (detailed.length > 0) {
-            displayRecipes(detailed);
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-robot"></i> 🔍 Search Web for Recipes';
-            return;
-          }
-        }
-        
-        // Fallback to Spoonacular simulation using a public proxy
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.themealdb.com/api/json/v1/1/filter.php?a=American`)}`;
-        const proxyRes = await fetch(proxyUrl);
-        const proxyData = await proxyRes.json();
-        
-        if (proxyData.contents) {
-          const parsed = JSON.parse(proxyData.contents);
-          if (parsed.meals && parsed.meals.length > 0) {
-            const webRecipes = await fetchDetailedMeals(parsed.meals.slice(0, 5));
-            if (webRecipes.length > 0) {
-              displayRecipes(webRecipes);
-              showNotification('✨ Found real recipes from the web!', '#4caf50');
-              btn.disabled = false;
-              btn.innerHTML = '<i class="fas fa-robot"></i> 🔍 Search Web for Recipes';
-              return;
-            }
-          }
-        }
-        
-        // If all APIs fail, generate AI-style response with web search simulation
-        const aiRecipes = generateSmartRecipes(query);
-        displayRecipes(aiRecipes);
-        showNotification('🌐 AI-curated recipes based on web search patterns', '#ff9800');
-        
-      } catch (error) {
-        console.error('Web search error:', error);
-        const fallbackRecipes = generateSmartRecipes(query);
-        displayRecipes(fallbackRecipes);
-        showNotification('📚 Showing curated recipe collection (web search temporarily limited)', '#ff9800');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-robot"></i> 🔍 Search Web for Recipes';
-      }
-    }
-    
-    function generateSmartRecipes(query) {
-      const goalKeyword = currentGoal === 'lose' ? 'low-calorie' : 'protein-rich';
-      return [
-        {
-          id: 'web1',
-          name: `${query.charAt(0).toUpperCase() + query.slice(1)} Power Bowl (Web Inspired)`,
-          calories: currentGoal === 'lose' ? 380 : 520,
-          protein: currentGoal === 'lose' ? 32 : 45,
-          carbs: 35,
-          fat: 15,
-          ingredients: [`Fresh ${query}`, "Quinoa", "Avocado", "Leafy greens", "Lemon vinaigrette"],
-          instructions: ["Cook quinoa according to package", "Prepare fresh ingredients", "Assemble bowl beautifully", "Drizzle with dressing"],
-          sourceUrl: "https://www.eatwell.com/recipes"
-        },
-        {
-          id: 'web2',
-          name: `Grilled ${query} with Herbs`,
-          calories: 420,
-          protein: 38,
-          carbs: 8,
-          fat: 24,
-          ingredients: [`400g ${query}`, "Rosemary", "Garlic", "Olive oil", "Lemon"],
-          instructions: ["Marinate with herbs and garlic", "Grill for 5-7 mins per side", "Rest before serving", "Garnish with lemon"],
-          sourceUrl: "https://www.healthyrecipes.com"
-        },
-        {
-          id: 'web3',
-          name: `${query} & Veggie Stir-fry`,
-          calories: currentGoal === 'lose' ? 350 : 480,
-          protein: 28,
-          carbs: 28,
-          fat: 12,
-          ingredients: [`250g ${query}`, "Broccoli", "Bell peppers", "Soy sauce", "Ginger"],
-          instructions: ["Cut all vegetables", "Stir-fry protein until golden", "Add vegetables and sauce", "Cook for 3-4 minutes"],
-          sourceUrl: "https://www.stirfrycentral.com"
-        }
-      ];
-    }
-    
     function displayRecipes(recipesArray) {
       const container = document.getElementById('recipesContainer');
       
@@ -765,16 +545,16 @@
               <div class="recipe-section">
                 <h5><i class="fas fa-shopping-basket"></i> INGREDIENTS</h5>
                 <ul class="ingredient-list">
-                  ${recipe.ingredients.map(ing => `<li><i class="fas fa-circle"></i> ${escapeHtml(ing)}</li>`).join('')}
+                  ${(recipe.ingredients || []).map(ing => `<li><i class="fas fa-circle"></i> ${escapeHtml(ing)}</li>`).join('')}
                 </ul>
               </div>
               <div class="recipe-section">
                 <h5><i class="fas fa-list-ol"></i> INSTRUCTIONS</h5>
                 <ol class="instruction-list">
-                  ${recipe.instructions.map(step => `<li>${escapeHtml(step)}</li>`).join('')}
+                  ${(recipe.instructions || []).map(step => `<li>${escapeHtml(step)}</li>`).join('')}
                 </ol>
               </div>
-              ${recipe.sourceUrl && recipe.sourceUrl !== '#' ? `<div class="recipe-source"><i class="fas fa-external-link-alt"></i> Source: <a href="${recipe.sourceUrl}" target="_blank" onclick="event.stopPropagation()">View Original Recipe</a></div>` : ''}
+              ${recipe.sourceUrl && recipe.sourceUrl !== '#' ? `<div class="recipe-source" style="margin-top: 8px; font-size: 11px;"><i class="fas fa-external-link-alt"></i> Source: <a href="${recipe.sourceUrl}" target="_blank" onclick="event.stopPropagation()" style="color: #a5b4fc;">View Original Recipe</a></div>` : ''}
               <button class="save-recipe-btn" onclick="event.stopPropagation(); saveRecipeToCookbook('${escapeHtml(recipe.name)}', ${idx})">
                 <i class="fas fa-bookmark"></i> Save Recipe
               </button>
@@ -783,7 +563,6 @@
         </div>
       `).join('');
       
-      // Store recipes globally for access
       window.currentRecipes = recipesArray;
     }
     
@@ -820,12 +599,53 @@
       setTimeout(() => notif.remove(), 3000);
     }
     
-    function closeModal() {
-      document.getElementById('recipeModal').classList.remove('active');
+    // ============================================
+    // AI WEB SEARCH - Calls YOUR backend properly
+    // ============================================
+    async function searchWebRecipes(query) {
+      const btn = document.getElementById('aiRecipeBtn');
+      const container = document.getElementById('recipesContainer');
+      
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 🌐 Searching the web for recipes...';
+      
+      container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Scanning online recipe databases...</p></div>';
+      
+      try {
+        // Call YOUR backend's search-recipes endpoint
+        const response = await fetch(`${API_URL}/ai/search-recipes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            query: query, 
+            goal: currentGoal 
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.recipes && data.recipes.length > 0) {
+          displayRecipes(data.recipes);
+          showNotification(`✨ Found ${data.recipes.length} recipes from the web!`, '#4caf50');
+        } else {
+          throw new Error('No recipes returned');
+        }
+        
+      } catch (error) {
+        console.error('Web search error:', error);
+        // Fallback to local recipes
+        const fallbackRecipes = getLocalFallbackRecipes(query);
+        displayRecipes(fallbackRecipes);
+        showNotification('📚 Showing curated recipe collection (web search temporarily limited)', '#ff9800');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-robot"></i> 🔍 Search Web for Recipes';
+      }
     }
-    window.closeModal = closeModal;
     
-    // Category selection
+    // ============================================
+    // CATEGORY SELECTION
+    // ============================================
     document.querySelectorAll('.category-tab').forEach(tab => {
       tab.addEventListener('click', async () => {
         document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
@@ -833,9 +653,9 @@
         currentCategory = tab.dataset.category;
         
         const container = document.getElementById('recipesContainer');
-        container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Finding web recipes...</p></div>';
+        container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i><p>Finding recipes...</p></div>';
         
-        const recipes = await fetchRecipesFromWeb(currentCategory);
+        const recipes = await fetchRecipesFromBackend(currentCategory);
         displayRecipes(recipes);
       });
     });
@@ -844,17 +664,19 @@
     document.getElementById('aiRecipeBtn').addEventListener('click', async () => {
       const activeTab = document.querySelector('.category-tab.active');
       const category = activeTab ? activeTab.dataset.category : 'high protein';
-      await searchWebRecipes(category);
+      const queryMap = {
+        'high protein': 'chicken',
+        'low carb': 'vegetable',
+        'quick': 'pasta',
+        'breakfast': 'eggs',
+        'healthy': 'quinoa'
+      };
+      await searchWebRecipes(queryMap[category] || 'healthy');
     });
-    
-    // Animation keyframes
-    const style = document.createElement('style');
-    style.textContent = `@keyframes fadeOut { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }`;
-    document.head.appendChild(style);
     
     // Initial load
     (async function init() {
-      const initialRecipes = await fetchRecipesFromWeb('high protein');
+      const initialRecipes = await fetchRecipesFromBackend('high protein');
       displayRecipes(initialRecipes);
     })();
   </script>
