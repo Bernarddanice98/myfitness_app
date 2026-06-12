@@ -6,54 +6,413 @@
   <title>FitBlueprint · Workout Plan</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* Your existing CSS (same as before) */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-    .page { max-width: 600px; margin: 0 auto; background: white; border-radius: 30px; padding: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-    .back-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 10px 20px; background: white; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .logo-section { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-    .logo { font-size: 22px; font-weight: bold; color: #667eea; text-decoration: none; display: flex; align-items: center; gap: 8px; }
-    .menu-btn { background: #667eea; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; width: 40px; height: 40px; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-    .menu-btn:hover { background: #764ba2; transform: scale(1.05); }
-    .goal-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px; border-radius: 20px; text-align: center; margin-bottom: 20px; }
-    .day-card { background: white; border-radius: 12px; margin-bottom: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #667eea; transition: all 0.3s ease; }
-    .day-card.completed { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left: 4px solid #4caf50 !important; }
-    .day-card-header { background: #f8f9fa; padding: 15px; font-weight: bold; font-size: 18px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-    .exercise-list { padding: 10px 15px; }
-    .exercise-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-    .exercise-name { flex: 1; margin-left: 8px; font-size: 14px; color: #333; }
-    .exercise-reps { color: #667eea; font-weight: bold; font-size: 13px; background: #f0f0ff; padding: 4px 8px; border-radius: 20px; }
-    .start-workout-btn { background: white; color: #333; border: 1px solid #ddd; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 12px; width: calc(100% - 30px); margin: 10px 15px 15px 15px; transition: all 0.2s; text-align: center; }
-    .start-workout-btn:hover { background: #f5f5f5; border-color: #667eea; }
-    .edit-workout-btn { background: white; color: #333; border: 1px solid #ddd; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px; }
-    .tips-card { background: #6641e9; border-radius: 15px; padding: 15px; margin-top: 20px; color: white; }
-    .tips-card ul { margin-left: 20px; }
-    .tips-card li { color: white; margin: 5px 0; }
-    .sidebar-nav { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: left 0.3s ease; z-index: 1000; overflow-y: auto; padding: 20px; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
-    .sidebar-nav.open { left: 0; }
-    .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.3); color: white; }
-    .close-sidebar { background: none; border: none; font-size: 28px; cursor: pointer; color: white; }
-    .sidebar-section { margin-bottom: 30px; }
-    .sidebar-section h4 { color: white; margin-bottom: 15px; font-size: 16px; opacity: 0.9; }
-    .predefined-workout-btn { width: 100%; padding: 12px; margin: 8px 0; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; text-align: left; cursor: pointer; transition: all 0.2s; color: white; font-size: 14px; }
-    .sidebar-action-btn { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.2s; }
-    .create-btn { background: #4caf50; color: white; }
-    .ai-btn { background: #ff9800; color: white; }
-    .saved-workout-item { background: rgba(255,255,255,0.15); padding: 10px; margin: 10px 0; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: white; }
-    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; display: none; }
-    .overlay.active { display: block; }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1100; justify-content: center; align-items: center; }
-    .modal.active { display: flex; }
-    .modal-content { background: white; border-radius: 20px; padding: 25px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
-    .custom-exercise { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 10px; }
-    .custom-exercise input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; }
-    .add-exercise-btn { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin: 10px 5px; }
-    .save-workout-btn { background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin: 10px 5px; }
-    .ai-loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-    .ai-loading-content { text-align: center; background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); }
-    .ai-loading-spinner { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3); border-top-color: #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .save-plan-btn { width: 100%; background: #4caf50; color: white; border: none; padding: 12px; border-radius: 10px; margin-top: 20px; cursor: pointer; font-weight: bold; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .page {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 30px;
+      padding: 25px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .back-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+      color: #667eea;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .menu-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .menu-btn:hover {
+      background: #764ba2;
+      transform: scale(1.05);
+    }
+
+    .goal-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 10px;
+      border-radius: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .day-card {
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #667eea;
+      transition: all 0.3s ease;
+    }
+
+    .day-card.completed {
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border-left: 4px solid #4caf50 !important;
+    }
+
+    .day-card-header {
+      background: #f8f9fa;
+      padding: 15px;
+      font-weight: bold;
+      font-size: 18px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .exercise-list {
+      padding: 10px 15px;
+    }
+
+    .exercise-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .exercise-item:last-child {
+      border-bottom: none;
+    }
+
+    .exercise-name {
+      flex: 1;
+      margin-left: 8px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .exercise-reps {
+      color: #667eea;
+      font-weight: bold;
+      font-size: 13px;
+      background: #f0f0ff;
+      padding: 4px 8px;
+      border-radius: 20px;
+    }
+
+    .start-workout-btn {
+      background: white;
+      color: #333;
+      border: 1px solid #ddd;
+      padding: 8px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      width: calc(100% - 30px);
+      margin: 10px 15px 15px 15px;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .start-workout-btn:hover {
+      background: #f5f5f5;
+      border-color: #667eea;
+    }
+
+    .edit-workout-btn {
+      background: white;
+      color: #333;
+      border: 1px solid #ddd;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .tips-card {
+      background: #6641e9;
+      border-radius: 15px;
+      padding: 15px;
+      margin-top: 20px;
+      color: white;
+    }
+
+    .tips-card ul {
+      margin-left: 20px;
+    }
+
+    .tips-card li {
+      color: white;
+      margin: 5px 0;
+    }
+
+    .sidebar-nav {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 280px;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      transition: left 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    }
+
+    .sidebar-nav.open {
+      left: 0;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid rgba(255,255,255,0.3);
+      color: white;
+    }
+
+    .sidebar-header h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .close-sidebar {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .sidebar-section {
+      margin-bottom: 30px;
+    }
+
+    .sidebar-section h4 {
+      color: white;
+      margin-bottom: 15px;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    .predefined-workout-btn {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 10px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: white;
+      font-size: 14px;
+    }
+
+    .sidebar-action-btn {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    .create-btn {
+      background: #4caf50;
+      color: white;
+    }
+
+    .ai-btn {
+      background: #ff9800;
+      color: white;
+    }
+
+    .saved-workout-item {
+      background: rgba(255,255,255,0.15);
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+
+    .saved-workout-item:hover {
+      background: rgba(255,255,255,0.25);
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+      display: none;
+    }
+
+    .overlay.active {
+      display: block;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1100;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .custom-exercise {
+      background: #f8f9fa;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+    }
+
+    .custom-exercise input {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .add-exercise-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+
+    .save-workout-btn {
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+
+    .save-plan-btn {
+      width: 100%;
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    .save-plan-btn:hover {
+      background: #43a047;
+      transform: translateY(-2px);
+    }
+
+    .refresh-btn {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      float: right;
+      font-size: 12px;
+    }
+
+    .refresh-btn:hover {
+      opacity: 0.8;
+    }
+
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      70% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
+    }
   </style>
 </head>
 <body>
@@ -64,11 +423,13 @@
       <h3><i class="fas fa-dumbbell"></i> Workout Library</h3>
       <button class="close-sidebar" id="closeSidebarBtn">&times;</button>
     </div>
+    
     <div class="sidebar-section">
       <h4><i class="fas fa-plus-circle"></i> Create & Generate</h4>
       <button class="sidebar-action-btn create-btn" id="sidebarCreateBtn"><i class="fas fa-plus"></i> Create Custom Workout</button>
       <button class="sidebar-action-btn ai-btn" id="sidebarAiGenerateBtn"><i class="fas fa-robot"></i> Generate AI Workout</button>
     </div>
+    
     <div class="sidebar-section">
       <h4><i class="fas fa-fire"></i> Predefined Workouts</h4>
       <button class="predefined-workout-btn" data-plan="push-pull-legs"><i class="fas fa-arrow-up"></i> Push/Pull/Legs (3 days)</button>
@@ -76,8 +437,12 @@
       <button class="predefined-workout-btn" data-plan="full-body"><i class="fas fa-child"></i> Full Body (3 days)</button>
       <button class="predefined-workout-btn" data-plan="strong-lifts"><i class="fas fa-weight-hanging"></i> StrongLifts 5x5</button>
     </div>
+    
     <div class="sidebar-section">
-      <h4><i class="fas fa-bookmark"></i> Saved Workouts</h4>
+      <h4>
+        <i class="fas fa-bookmark"></i> Saved Workouts
+        <button class="refresh-btn" onclick="refreshSavedWorkouts()"><i class="fas fa-sync-alt"></i></button>
+      </h4>
       <div id="savedWorkoutsList">Loading...</div>
     </div>
   </div>
@@ -89,10 +454,13 @@
         <button class="menu-btn" id="menuBtn"><i class="fas fa-bars"></i></button>
       </div>
     </div>
+
     <div class="goal-badge" id="goalBadge">
       <i class="fas fa-bullseye"></i> <span id="goalBadgeText">Lose Weight</span> · <span id="freqBadgeText">3x/week</span>
     </div>
+
     <div class="day-cards-container" id="dayCardsContainer"></div>
+
     <div class="tips-card">
       <h3><i class="fas fa-lightbulb"></i> Workout Tips</h3>
       <ul>
@@ -131,7 +499,7 @@
 
   <script>
     // ============================================
-    // API URL - DEFINED GLOBALLY (FIXED)
+    // API URL - DEFINED GLOBALLY
     // ============================================
     const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3000/api'
@@ -169,7 +537,7 @@
         const token = localStorage.getItem('authToken');
         const userId = localStorage.getItem('userId');
         
-        console.log('💾 Saving workout to backend...', { token: !!token, userId });
+        console.log('💾 Saving workout to backend...', { token: !!token, userId, workoutName: workoutPlan.name });
         
         if (!token || !userId) {
             console.log('Not logged in, saving to localStorage only');
@@ -177,7 +545,6 @@
         }
         
         try {
-            // First get current user data
             const response = await fetch(`${API_URL}/user-data/${userId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -193,7 +560,6 @@
             const userData = await response.json();
             let savedWorkouts = userData.savedWorkouts || [];
             
-            // Check if workout already exists (by name)
             const existingIndex = savedWorkouts.findIndex(w => w.name === workoutPlan.name);
             
             if (existingIndex >= 0) {
@@ -202,15 +568,17 @@
                     savedAt: new Date().toISOString(),
                     id: savedWorkouts[existingIndex].id
                 };
+                console.log('Updating existing workout:', savedWorkouts[existingIndex].id);
             } else {
-                savedWorkouts.push({
+                const newWorkout = {
                     ...workoutPlan,
                     id: Date.now(),
                     savedAt: new Date().toISOString()
-                });
+                };
+                savedWorkouts.push(newWorkout);
+                console.log('Adding new workout with ID:', newWorkout.id);
             }
             
-            // Save back to backend
             const saveResponse = await fetch(`${API_URL}/user-data/${userId}`, {
                 method: 'POST',
                 headers: {
@@ -225,14 +593,17 @@
             });
             
             if (saveResponse.ok) {
-                console.log('✅ Workout saved to database');
+                console.log('✅ Workout saved to database, total workouts:', savedWorkouts.length);
                 localStorage.setItem('savedWorkouts', JSON.stringify(savedWorkouts));
                 return true;
+            } else {
+                console.error('Save response not OK:', saveResponse.status);
+                return false;
             }
         } catch (error) {
             console.error('Save workout error:', error);
+            return false;
         }
-        return false;
     }
     
     async function loadSavedWorkoutsFromBackend() {
@@ -270,10 +641,12 @@
     }
     
     async function loadSavedWorkoutsList() {
-        const savedWorkouts = await loadSavedWorkoutsFromBackend();
         const container = document.getElementById('savedWorkoutsList');
-        
         if (!container) return;
+        
+        container.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-size: 12px;">Loading saved workouts...</p>';
+        
+        const savedWorkouts = await loadSavedWorkoutsFromBackend();
         
         if (savedWorkouts.length === 0) {
             container.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-size: 12px;">No saved workouts yet</p>';
@@ -287,6 +660,12 @@
             </div>
         `).join('');
     }
+    
+    window.refreshSavedWorkouts = async function() {
+        showNotification('Refreshing saved workouts...', 'info');
+        await loadSavedWorkoutsList();
+        showNotification('Saved workouts refreshed!', 'success');
+    };
     
     window.loadSavedWorkout = async function(id) {
         const savedWorkouts = await loadSavedWorkoutsFromBackend();
@@ -364,7 +743,7 @@
     };
     
     // ============================================
-    // EXISTING FUNCTIONS (renderWorkout, etc.)
+    // EXISTING FUNCTIONS
     // ============================================
     
     function escapeHtml(str) {
@@ -667,8 +1046,12 @@
     (async function init() {
       await loadSavedWorkoutsList();
       const cachedWorkout = getCachedWorkout();
-      if (cachedWorkout) renderWorkout(cachedWorkout);
-      else renderWorkout(getFallbackWorkout());
+      if (cachedWorkout) {
+        renderWorkout(cachedWorkout);
+      } else {
+        renderWorkout(getFallbackWorkout());
+      }
+      console.log('✅ Workout page initialized');
     })();
     
     const style = document.createElement('style');
