@@ -52,6 +52,63 @@
     .sidebar-action-btn:hover { transform: translateX(5px); opacity: 0.9; }
     .edit-workout-btn { background: white; color: #333; border: 1px solid #ddd; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
     .edit-workout-btn:hover { background: #f5f5f5; border-color: #ccc; transform: scale(1.02); }
+    
+    /* Loading Overlay */
+    .ai-loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .ai-loading-content {
+      text-align: center;
+      background: rgba(255,255,255,0.1);
+      padding: 30px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .ai-loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .progress-bar {
+      width: 300px;
+      height: 6px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 3px;
+      margin: 20px auto;
+      overflow: hidden;
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      animation: progress 8s ease-out forwards;
+    }
+    @keyframes progress {
+      0% { width: 0%; }
+      20% { width: 20%; }
+      40% { width: 45%; }
+      60% { width: 65%; }
+      80% { width: 85%; }
+      100% { width: 95%; }
+    }
   </style>
 </head>
 <body>
@@ -136,7 +193,7 @@
 
   <script>
     // ============================================
-    // DEFINE API_URL - AUTO DETECT ENVIRONMENT
+    // API URL - AUTO DETECT
     // ============================================
     const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3000/api'
@@ -145,7 +202,7 @@
     console.log('🌐 API_URL:', API_URL);
     
     // ============================================
-    // AUTH CHECK - Redirect if not logged in
+    // AUTH CHECK
     // ============================================
     (function checkAuth() {
       const token = localStorage.getItem('authToken');
@@ -163,6 +220,69 @@
       }
     })();
     
+    // ============================================
+    // CACHE SYSTEM (Solution 1)
+    // ============================================
+    function getCachedWorkout(goal, frequency) {
+      const cacheKey = `cached_workout_${goal}_${frequency}`;
+      const cached = localStorage.getItem(cacheKey);
+      
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          // Cache expires after 24 hours
+          if (Date.now() < data.expiry) {
+            console.log('💾 Workout loaded from cache');
+            return data.workoutPlan;
+          } else {
+            localStorage.removeItem(cacheKey);
+          }
+        } catch(e) {
+          console.error('Cache error:', e);
+        }
+      }
+      return null;
+    }
+    
+    function saveToCache(goal, frequency, workoutPlan) {
+      const cacheKey = `cached_workout_${goal}_${frequency}`;
+      const cacheData = {
+        workoutPlan: workoutPlan,
+        timestamp: Date.now(),
+        expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+      };
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+      console.log('💾 Workout saved to cache');
+    }
+    
+    // ============================================
+    // FALLBACK WORKOUT (Solution 3 - instantané)
+    // ============================================
+    function getFallbackWorkout() {
+      const dayNames = getDayNames(goal, frequency);
+      const fallbackDays = [];
+      
+      for (let i = 0; i < dayNames.length; i++) {
+        fallbackDays.push({
+          name: dayNames[i],
+          exercises: [
+            { name: "Barbell Bench Press", sets: 3, reps: "10-12" },
+            { name: "Pull-ups", sets: 3, reps: "8-10" },
+            { name: "Squats", sets: 3, reps: "10-12" },
+            { name: "Overhead Press", sets: 3, reps: "8-10" },
+            { name: "Barbell Rows", sets: 3, reps: "10-12" },
+            { name: "Leg Press", sets: 3, reps: "12-15" },
+            { name: "Plank", sets: 3, reps: "45 sec" }
+          ]
+        });
+      }
+      
+      return { days: fallbackDays };
+    }
+    
+    // ============================================
+    // REST OF YOUR EXISTING FUNCTIONS
+    // ============================================
     (function() {
       const dayCardsContainer = document.getElementById('dayCardsContainer');
       const goalBadgeText = document.getElementById('goalBadgeText');
@@ -296,9 +416,6 @@
         return db[goal]?.[dayName] || [{ name: "Active Recovery - Stretching", sets: 1, reps: "20 min" }];
       }
 
-      // ============================================
-      // MAIN RENDER WORKOUT
-      // ============================================
       function renderWorkout(workoutPlan = null) {
         currentWorkoutPlan = workoutPlan;
         let cardsHtml = '';
@@ -357,8 +474,7 @@
         dayCardsContainer.innerHTML = cardsHtml;
       }
 
-      // Start workout
-      window.startWorkoutDay = function(dayIndex) {
+      function startWorkoutDay(dayIndex) {
         const workout = currentWorkoutPlan || { days: getDayNames(goal, frequency).map((name, idx) => ({
           name: name,
           exercises: getLocalExercisesForDay(goal, name)
@@ -373,8 +489,10 @@
         
         localStorage.setItem('currentWorkout', JSON.stringify(workoutData));
         window.location.href = 'workout-detail.html';
-      };
+      }
 
+      window.startWorkoutDay = startWorkoutDay;
+      
       // Edit workout functions
       window.editWorkoutDay = function(dayIndex) {
         editingWorkoutIndex = dayIndex;
@@ -447,7 +565,6 @@
       
       window.closeEditModal = closeEditModal;
 
-      // Save workout
       window.saveCurrentWorkout = function() {
         if (!currentWorkoutPlan) {
           showNotification('No workout to save', 'error');
@@ -482,177 +599,4 @@
             <div><strong>${workout.name}</strong><br><small>${workout.days.length} days · ${workout.createdAt}</small></div>
             <button onclick="event.stopPropagation(); deleteSavedWorkout(${workout.id})" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;"><i class="fas fa-trash"></i></button>
           </div>
-        `).join('');
-      }
-      
-      window.loadSavedWorkout = function(id) {
-        const savedWorkouts = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
-        const workout = savedWorkouts.find(w => w.id === id);
-        if (workout) {
-          renderWorkout({ days: workout.days, name: workout.name });
-          showNotification(`Loaded: ${workout.name}`, 'success');
-          closeSidebar();
-        }
-      };
-      
-      window.deleteSavedWorkout = function(id) {
-        let savedWorkouts = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
-        savedWorkouts = savedWorkouts.filter(w => w.id !== id);
-        localStorage.setItem('savedWorkouts', JSON.stringify(savedWorkouts));
-        loadSavedWorkoutsList();
-        showNotification('Workout deleted', 'success');
-      };
-      
-      // Predefined workouts
-      window.loadPredefinedWorkout = function(type) {
-        let workout = null;
-        
-        if (type === 'push-pull-legs') {
-          workout = { name: 'Push/Pull/Legs', days: [
-            { name: 'Push Day', exercises: [{ name: 'Barbell Bench Press', sets: 4, reps: '8-10' }, { name: 'Overhead Press', sets: 4, reps: '8-10' }, { name: 'Incline Dumbbell Press', sets: 3, reps: '10-12' }, { name: 'Lateral Raises', sets: 3, reps: '15-20' }, { name: 'Tricep Pushdowns', sets: 3, reps: '12-15' }] },
-            { name: 'Pull Day', exercises: [{ name: 'Deadlifts', sets: 4, reps: '6-8' }, { name: 'Pull-ups', sets: 4, reps: '8-10' }, { name: 'Barbell Rows', sets: 3, reps: '8-10' }, { name: 'Face Pulls', sets: 3, reps: '15' }, { name: 'Barbell Curls', sets: 3, reps: '10-12' }] },
-            { name: 'Leg Day', exercises: [{ name: 'Back Squats', sets: 4, reps: '8-10' }, { name: 'Romanian Deadlifts', sets: 4, reps: '10-12' }, { name: 'Leg Press', sets: 3, reps: '12-15' }, { name: 'Walking Lunges', sets: 3, reps: '12 per leg' }, { name: 'Calf Raises', sets: 4, reps: '20' }] }
-          ]};
-        } else if (type === 'upper-lower') {
-          workout = { name: 'Upper/Lower Split', days: [
-            { name: 'Upper Body A', exercises: [{ name: 'Bench Press', sets: 4, reps: '8-10' }, { name: 'Pull-ups', sets: 4, reps: '8-10' }, { name: 'Shoulder Press', sets: 3, reps: '10-12' }, { name: 'Barbell Rows', sets: 3, reps: '10-12' }] },
-            { name: 'Lower Body A', exercises: [{ name: 'Squats', sets: 4, reps: '8-10' }, { name: 'Romanian Deadlifts', sets: 4, reps: '10-12' }, { name: 'Leg Press', sets: 3, reps: '12-15' }, { name: 'Calf Raises', sets: 4, reps: '20' }] }
-          ]};
-        } else if (type === 'full-body') {
-          workout = { name: 'Full Body Workout', days: [
-            { name: 'Full Body A', exercises: [{ name: 'Squats', sets: 3, reps: '10-12' }, { name: 'Bench Press', sets: 3, reps: '10-12' }, { name: 'Pull-ups', sets: 3, reps: '8-10' }, { name: 'Overhead Press', sets: 3, reps: '10-12' }] },
-            { name: 'Full Body B', exercises: [{ name: 'Deadlifts', sets: 3, reps: '8-10' }, { name: 'Incline Press', sets: 3, reps: '10-12' }, { name: 'Barbell Rows', sets: 3, reps: '10-12' }, { name: 'Lunges', sets: 3, reps: '12 per leg' }] }
-          ]};
-        } else if (type === 'strong-lifts') {
-          workout = { name: 'StrongLifts 5x5', days: [
-            { name: 'Workout A', exercises: [{ name: 'Squats', sets: 5, reps: '5' }, { name: 'Bench Press', sets: 5, reps: '5' }, { name: 'Barbell Rows', sets: 5, reps: '5' }] },
-            { name: 'Workout B', exercises: [{ name: 'Squats', sets: 5, reps: '5' }, { name: 'Overhead Press', sets: 5, reps: '5' }, { name: 'Deadlifts', sets: 1, reps: '5' }] }
-          ]};
-        }
-        
-        if (workout) {
-          renderWorkout(workout);
-          showNotification(`Loaded: ${workout.name}`, 'success');
-          closeSidebar();
-        }
-      };
-      
-      // ============================================
-      // AI WORKOUT GENERATION
-      // ============================================
-      async function generateAIWorkout() {
-        const aiBtn = document.getElementById('sidebarAiGenerateBtn');
-        const originalText = aiBtn.innerHTML;
-        aiBtn.disabled = true;
-        aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-        
-        const url = `${API_URL}/ai/generate-workout`;
-        console.log('🔍 Calling API URL:', url);
-        
-        try {
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              goal: goal,
-              frequency: frequency,
-              userProfile: userProfile
-            })
-          });
-          
-          console.log('🔍 Response status:', response.status);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-          
-          const data = await response.json();
-          console.log('🔍 Response data:', data);
-          
-          if (data.success && data.workoutPlan) {
-            renderWorkout(data.workoutPlan);
-            showNotification('AI workout generated!', 'success');
-          } else {
-            showNotification('AI failed: ' + (data.error || 'Unknown error'), 'error');
-            renderWorkout(null);
-          }
-        } catch (error) {
-          console.error('🔍 Fetch error:', error);
-          showNotification('AI failed, using local plan', 'error');
-          renderWorkout(null);
-        } finally {
-          aiBtn.disabled = false;
-          aiBtn.innerHTML = originalText;
-          closeSidebar();
-        }
-      }
-      
-      function showNotification(message, type) {
-        const notification = document.createElement('div');
-        notification.style.cssText = `position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: ${type === 'success' ? '#4caf50' : '#ff9800'}; color: white; padding: 12px 24px; border-radius: 8px; z-index: 2000; font-size: 14px;`;
-        notification.innerHTML = message;
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 3000);
-      }
-
-      // Custom workout functions
-      window.addCustomExercise = function() {
-        const container = document.getElementById('customExercisesList');
-        const exerciseDiv = document.createElement('div');
-        exerciseDiv.className = 'custom-exercise';
-        exerciseDiv.innerHTML = `<input type="text" placeholder="Exercise name" class="ex-name"><input type="number" placeholder="Sets" class="ex-sets" value="3"><input type="text" placeholder="Reps" class="ex-reps" value="10-12"><button onclick="this.parentElement.remove()" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin-top: 5px;">Remove</button>`;
-        container.appendChild(exerciseDiv);
-      };
-      
-      window.saveCustomWorkout = function() {
-        const workoutName = document.getElementById('workoutName').value;
-        if (!workoutName) {
-          showNotification('Please enter a workout name', 'error');
-          return;
-        }
-        
-        const exerciseDivs = document.querySelectorAll('#customExercisesList .custom-exercise');
-        const exercises = [];
-        exerciseDivs.forEach(div => {
-          const name = div.querySelector('.ex-name')?.value;
-          const sets = div.querySelector('.ex-sets')?.value;
-          const reps = div.querySelector('.ex-reps')?.value;
-          if (name && sets && reps) exercises.push({ name, sets: parseInt(sets), reps });
-        });
-        
-        if (exercises.length === 0) {
-          showNotification('Add at least one exercise', 'error');
-          return;
-        }
-        
-        const workout = { days: [{ name: workoutName, exercises }] };
-        renderWorkout(workout);
-        closeCustomModal();
-        showNotification('Custom workout created!', 'success');
-        closeSidebar();
-      };
-      
-      function openCustomModal() {
-        document.getElementById('customModal').classList.add('active');
-        document.getElementById('customExercisesList').innerHTML = '';
-        addCustomExercise();
-        document.getElementById('workoutName').value = '';
-      }
-      
-      function closeCustomModal() {
-        document.getElementById('customModal').classList.remove('active');
-      }
-      
-      window.closeCustomModal = closeCustomModal;
-
-      // Event listeners
-      document.getElementById('sidebarCreateBtn').addEventListener('click', openCustomModal);
-      document.getElementById('sidebarAiGenerateBtn').addEventListener('click', generateAIWorkout);
-      
-      loadSavedWorkoutsList();
-      renderWorkout(null);
-      
-    })();
-  </script>
-</body>
-</html>
+        `).
