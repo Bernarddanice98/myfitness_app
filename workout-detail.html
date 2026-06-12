@@ -120,6 +120,45 @@
       }));
       
       saveToServer();
+      // When user completes a workout, call this:
+async function markWorkoutComplete() {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
+    const workoutData = JSON.parse(localStorage.getItem('currentWorkout') || '{}');
+    
+    if (token && userId && workoutData.workoutName !== undefined) {
+        try {
+            await fetch(`${API_URL}/workout-complete/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    workoutName: workoutData.workoutName,
+                    dayIndex: workoutData.dayIndex,
+                    date: new Date().toISOString()
+                })
+            });
+            console.log('✅ Workout marked complete in database');
+        } catch(e) {}
+    }
+    
+    // Also save progress details
+    await fetch(`${API_URL}/workout-progress/${userId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            workoutData: workoutData,
+            setsStatus: completedSets,
+            weightsData: weightsUsed,
+            repsData: repsPerformed
+        })
+    });
+}
       showNotification('Progress saved!', 'success');
     }
     

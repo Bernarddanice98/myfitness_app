@@ -1069,7 +1069,287 @@
         if (plan) loadPredefinedWorkout(plan);
       });
     });
+    // ============================================
+// SAVE WORKOUTS TO BACKEND
+// ============================================
+
+// Save current workout plan to database
+async function saveWorkoutToBackend(workoutPlan) {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
     
+    if (!token || !userId) {
+        console.log('Not logged in, saving to localStorage only');
+        return false;
+    }
+    
+    try {
+        // First get current user data
+        const response = await fetch(`${API_URL}/user-data/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401) window.location.href = 'login.html';
+            return false;
+        }
+        
+        const userData = await response.json();
+        let savedWorkouts = userData.savedWorkouts || [];
+        
+        // Check if workout already exists (by name)
+        const existingIndex = savedWorkouts.findIndex(w => w.name === workoutPlan.name);
+        
+        if (existingIndex >= 0) {
+            // Update existing
+            savedWorkouts[existingIndex] = {
+                ...workoutPlan,
+                savedAt: new Date().toISOString(),
+                id: savedWorkouts[existingIndex].id
+            };
+        } else {
+            // Add new
+            savedWorkouts.push({
+                ...workoutPlan,
+                id: Date.now(),
+                savedAt: new Date().toISOString()
+            });
+        }
+        
+        // Save back to backend
+        const saveResponse = await fetch(`${API_URL}/user-data/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                profile: userData.profile || {},
+                savedWorkouts: savedWorkouts,
+                workoutHistory: userData.workoutHistory || {}
+            })
+        });
+        
+        if (saveResponse.ok) {
+            console.log('✅ Workout saved to database');
+            // Also save to localStorage as cache
+            localStorage.setItem('savedWorkouts', JSON.stringify(savedWorkouts));
+            return true;
+        }
+    } catch (error) {
+        console.error('Save workout error:', error);
+    }
+    return false;
+}
+
+// Load saved workouts from backend
+async function loadSavedWorkoutsFromBackend() {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
+    
+    if (!token || !userId) {
+        // Fallback to localStorage
+        const local = localStorage.getItem('savedWorkouts');
+        return local ? JSON.parse(local) : [];
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/user-data/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const userData = await response.json();
+            const savedWorkouts = userData.savedWorkouts || [];
+            // Cache in localStorage
+            localStorage.setItem('savedWorkouts', JSON.stringify(savedWorkouts));
+            console.log(`✅ Loaded ${savedWorkouts.length} workouts from database`);
+            return savedWorkouts;
+        } else if (response.status === 401) {
+            window.location.href = 'login.html';
+            return [];
+        }
+    } catch (error) {
+        console.error('Load workouts error:', error);
+    }
+    
+    // Fallback to localStorage
+    const local = localStorage.getItem('savedWorkouts');
+    return local ? JSON.parse(local) : [];
+}
+
+// Save a completed workout to history
+async function saveCompletedWorkoutToBackend(workoutName, dayIndex) {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
+    
+    if (!token || !userId) return false;
+    
+    try {
+        const response = await fetch(`${API_URL}/workout-complete/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                workoutName: workoutName,
+                dayIndex: dayIndex,
+                date: new Date().toISOString()
+            })
+        });
+        
+        if (response.ok) {
+            console.log('✅ Completed workout saved to database');
+            return true;
+        }
+    } catch (error) {
+        console.error('Save completed workout error:', error);
+    }
+    return false;
+}
+
+// Load completed workouts for current week
+async function loadCompletedWorkoutsFromBackend() {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
+    
+    if (!token || !userId) return [];
+    
+    try {
+        const response = await fetch(`${API_URL}/completed-workouts/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            return data.completedWorkouts || [];
+        }
+    } catch (error) {
+        console.error('Load completed workouts error:', error);
+    }
+    return [];
+}
+
+// Update your existing saveCurrentWorkout function
+window.saveCurrentWorkout = async function() {
+    if (!currentWorkoutPlan) {
+        showNotification('No workout to save', 'error');
+        return;
+    }
+    
+    const workoutName = prompt('Name this workout plan:', currentWorkoutPlan.name || 'My Workout');
+    if (!workoutName) return;
+    
+    currentWorkoutPlan.name = workoutName;
+    
+    const saved = await saveWorkoutToBackend(currentWorkoutPlan);
+    
+    if (saved) {
+        showNotification('✅ Workout saved to your account!', 'success');
+        await loadSavedWorkoutsList(); // Refresh the list
+    } else {
+        // Fallback to localStorage
+        const savedWorkouts = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
+        savedWorkouts.push({
+            ...currentWorkoutPlan,
+            id: Date.now(),
+            savedAt: new Date().toISOString()
+        });
+        localStorage.setItem('savedWorkouts', JSON.stringify(savedWorkouts));
+        showNotification('💾 Workout saved locally', 'success');
+        loadSavedWorkoutsList();
+    }
+};
+
+// Update loadSavedWorkoutsList to use backend
+async function loadSavedWorkoutsList() {
+    const savedWorkouts = await loadSavedWorkoutsFromBackend();
+    const container = document.getElementById('savedWorkoutsList');
+    
+    if (!container) return;
+    
+    if (savedWorkouts.length === 0) {
+        container.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-size: 12px;">No saved workouts yet</p>';
+        return;
+    }
+    
+    container.innerHTML = savedWorkouts.map(workout => `
+        <div class="saved-workout-item" onclick="loadSavedWorkout(${workout.id})">
+            <div><strong>${escapeHtml(workout.name)}</strong><br><small>${workout.days?.length || 0} days · ${workout.savedAt ? new Date(workout.savedAt).toLocaleDateString() : ''}</small></div>
+            <button onclick="event.stopPropagation(); deleteSavedWorkout(${workout.id})" style="background: rgba(255,255,255,0.2); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+}
+
+// Update deleteSavedWorkout
+window.deleteSavedWorkout = async function(id) {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
+    
+    if (token && userId) {
+        try {
+            const response = await fetch(`${API_URL}/user-data/${userId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const userData = await response.json();
+            let savedWorkouts = userData.savedWorkouts || [];
+            savedWorkouts = savedWorkouts.filter(w => w.id !== id);
+            
+            await fetch(`${API_URL}/user-data/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    profile: userData.profile || {},
+                    savedWorkouts: savedWorkouts,
+                    workoutHistory: userData.workoutHistory || {}
+                })
+            });
+        } catch(e) {}
+    }
+    
+    // Also remove from localStorage
+    let savedWorkouts = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
+    savedWorkouts = savedWorkouts.filter(w => w.id !== id);
+    localStorage.setItem('savedWorkouts', JSON.stringify(savedWorkouts));
+    
+    await loadSavedWorkoutsList();
+    showNotification('Workout deleted', 'success');
+};
+
+// Update startWorkoutDay to save completion
+window.startWorkoutDay = async function(dayIndex) {
+    const workout = currentWorkoutPlan || { days: getDayNames(goal, frequency).map((name, idx) => ({
+        name: name,
+        exercises: getLocalExercisesForDay(goal, name)
+    }))};
+    
+    const workoutData = {
+        day: workout.days[dayIndex],
+        dayIndex: dayIndex,
+        workoutName: workout.name || 'Workout Plan',
+        goal: goal
+    };
+    
+    localStorage.setItem('currentWorkout', JSON.stringify(workoutData));
+    
+    // Mark as started/completed when they finish (in workout-detail.html)
+    window.location.href = 'workout-detail.html';
+};
+
+// At the end of workout completion (in workout-detail.html), call:
+// await saveCompletedWorkoutToBackend(workoutName, dayIndex);
+
+// Initialize - load saved workouts on page load
+(async function initWorkoutPage() {
+    await loadSavedWorkoutsList();
+    // Also load completed workouts to show progress
+    const completed = await loadCompletedWorkoutsFromBackend();
+    console.log(`📊 Completed workouts this week: ${completed.length}`);
+})();
     // Initialize
     loadSavedWorkoutsList();
     const cachedWorkout = getCachedWorkout();
@@ -1080,6 +1360,7 @@
     const style = document.createElement('style');
     style.textContent = `@keyframes fadeOut { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }`;
     document.head.appendChild(style);
+    
   </script>
 </body>
 </html>
