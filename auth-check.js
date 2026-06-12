@@ -1,6 +1,11 @@
 // auth-check.js - Complete authentication and session management
 (function() {
-    const API_URL = 'http://localhost:3000/api';
+    // ✅ CORRECTION: Détecte automatiquement l'environnement
+    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000/api'
+        : 'https://myfitness-app-1-a77k.onrender.com/api';  // ← Mets ton URL Render
+    
+    console.log('🔧 Auth initialized, API_URL:', API_URL);
     
     // Get current session user
     function getCurrentUser() {
@@ -12,7 +17,7 @@
             sessionExpiresAt: localStorage.getItem('sessionExpiresAt')
         };
     }
-    //just adding this 
+    
     // Check if session is still valid (2 hours)
     function isSessionValid() {
         const expiresAt = localStorage.getItem('sessionExpiresAt');
@@ -57,9 +62,10 @@
             
             return true;
         } catch (error) {
-            // If server unreachable but token exists and session not expired, allow access
             console.warn('Server unreachable, using cached auth');
-            return isSessionValid();
+            // ⚠️ NE PAS rediriger automatiquement en production
+            // Juste retourner true si le token existe localement
+            return !!token && isSessionValid();
         }
     }
     
@@ -70,6 +76,9 @@
         localStorage.removeItem('userId');
         localStorage.removeItem('sessionId');
         localStorage.removeItem('sessionExpiresAt');
+        localStorage.removeItem('fitBlueprintData');
+        localStorage.removeItem('savedWorkouts');
+        localStorage.removeItem('workoutHistory');
         window.location.href = 'login.html';
     }
     
@@ -304,7 +313,6 @@
             z-index: 1001;
             font-size: 14px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
         `;
         warning.innerHTML = `<i class="fas fa-clock"></i> ${message}`;
         document.body.appendChild(warning);
