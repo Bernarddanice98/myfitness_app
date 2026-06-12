@@ -584,7 +584,151 @@ Now respond based on the user's ACTUAL goal: ${ctx.goal === 'gain' ? 'MUSCLE GAI
     if (!hasSavedData) {
         setGoal('lose');
     }
+    // Add these functions to your index.html script:
+
+// Save profile to backend (Supabase via your API)
+async function saveProfileToBackend() {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
     
+    if (!token || !userId) return;
+    
+    const profileData = {
+        height: parseFloat(heightInput.value) || 175,
+        weight: parseFloat(weightInput.value) || 70,
+        age: parseInt(ageInput.value) || 25,
+        gender: genderSelect.value,
+        frequency: parseInt(frequencySelect.value),
+        goal: currentGoal,
+        foodPrefs: foodPrefsInput.value || '',
+        exercisePrefs: exercisePrefsInput.value || '',
+        lastUpdated: new Date().toISOString()
+    };
+    
+    try {
+        const response = await fetch(`${API_URL}/user-data/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                profile: profileData,
+                savedWorkouts: [],
+                workoutHistory: {}
+            })
+        });
+        
+        if (response.ok) {
+            console.log('✅ Profile saved to database');
+            // Also cache in localStorage
+            localStorage.setItem('fitBlueprintData', JSON.stringify(profileData));
+        } else if (response.status === 401) {
+            console.log('Session expired');
+            window.location.href = 'login.html';
+        }
+    } catch (error) {
+        console.error('Save error:', error);
+    }
+}
+
+// Load profile from backend
+async function loadProfileFromBackend() {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
+    
+    if (!token || !userId) return false;
+    
+    try {
+        const response = await fetch(`${API_URL}/user-data/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const profile = data.profile || {};
+            
+            if (Object.keys(profile).length > 0) {
+                // Apply to inputs
+                if (profile.height) heightInput.value = profile.height;
+                if (profile.weight) weightInput.value = profile.weight;
+                if (profile.age) ageInput.value = profile.age;
+                if (profile.gender) genderSelect.value = profile.gender;
+                if (profile.frequency) frequencySelect.value = profile.frequency;
+                if (profile.foodPrefs) foodPrefsInput.value = profile.foodPrefs;
+                if (profile.exercisePrefs) exercisePrefsInput.value = profile.exercisePrefs;
+                if (profile.goal) {
+                    currentGoal = profile.goal;
+                    goalButtons.forEach(btn => {
+                        btn.classList.toggle('active', btn.getAttribute('data-goal') === profile.goal);
+                    });
+                }
+                
+                // Cache in localStorage
+                localStorage.setItem('fitBlueprintData', JSON.stringify(profile));
+                updateAll();
+                console.log('✅ Profile loaded from database');
+                return true;
+            }
+        } else if (response.status === 401) {
+            window.location.href = 'login.html';
+            return false;
+        }
+    } catch (error) {
+        console.error('Load error:', error);
+    }
+    
+    // Fallback to localStorage
+    const saved = localStorage.getItem('fitBlueprintData');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            if (data.height) heightInput.value = data.height;
+            if (data.weight) weightInput.value = data.weight;
+            if (data.age) ageInput.value = data.age;
+            if (data.gender) genderSelect.value = data.gender;
+            if (data.frequency) frequencySelect.value = data.frequency;
+            if (data.foodPrefs) foodPrefsInput.value = data.foodPrefs;
+            if (data.exercisePrefs) exercisePrefsInput.value = data.exercisePrefs;
+            if (data.goal) {
+                currentGoal = data.goal;
+                goalButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-goal') === data.goal);
+                });
+            }
+            updateAll();
+            return true;
+        } catch(e) {}
+    }
+    return false;
+}
+
+// Debounced save (saves 1 second after user stops typing)
+let saveTimeout;
+function debouncedSaveProfile() {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        saveProfileToBackend();
+    }, 1000);
+}
+
+// Replace your existing event listeners:
+heightInput.addEventListener('input', () => { updateAll(); debouncedSaveProfile(); });
+weightInput.addEventListener('input', () => { updateAll(); debouncedSaveProfile(); });
+ageInput.addEventListener('input', () => { updateAll(); debouncedSaveProfile(); });
+genderSelect.addEventListener('change', () => { updateAll(); debouncedSaveProfile(); });
+frequencySelect.addEventListener('change', () => { updateAll(); debouncedSaveProfile(); });
+foodPrefsInput.addEventListener('input', debouncedSaveProfile);
+exercisePrefsInput.addEventListener('input', debouncedSaveProfile);
+
+// Save before page leaves
+window.addEventListener('beforeunload', () => saveProfileToBackend());
+
+// Initialize - load from database first
+(async function init() {
+    await loadProfileFromBackend();
+    updateAll();
+})();
     // Ajouter bouton logout et afficher nom
     if (window.auth) {
         window.auth.addLogoutButton();
