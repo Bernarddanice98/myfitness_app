@@ -441,4 +441,11 @@ async function resetWeeklyWorkouts() {
 
 scheduleWeeklyReset();
 
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ FitBlueprint server running on port ${PORT}`);
+  console.log(`📡 API endpoint: http://localhost:${PORT}/api/test`);
+});
+
 module.exports = app;
