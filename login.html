@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>FitBlueprint · Sign In</title>
+  <title>FitBlueprint · Login</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     * {
@@ -29,12 +29,6 @@
       border-radius: 30px;
       padding: 40px 30px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      animation: fadeIn 0.5s ease;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
     }
     
     .logo {
@@ -45,18 +39,11 @@
     .logo i {
       font-size: 60px;
       color: #667eea;
-      margin-bottom: 10px;
     }
     
     .logo h1 {
       font-size: 28px;
       color: #667eea;
-    }
-    
-    .logo p {
-      color: #666;
-      font-size: 14px;
-      margin-top: 5px;
     }
     
     .input-group {
@@ -68,28 +55,14 @@
       margin-bottom: 8px;
       color: #333;
       font-weight: 500;
-      font-size: 14px;
-    }
-    
-    .input-icon {
-      position: relative;
-    }
-    
-    .input-icon i {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #999;
     }
     
     input {
       width: 100%;
-      padding: 14px 14px 14px 45px;
+      padding: 14px;
       border: 2px solid #e0e0e0;
       border-radius: 12px;
       font-size: 16px;
-      transition: 0.2s;
     }
     
     input:focus {
@@ -107,26 +80,12 @@
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
-      transition: 0.2s;
       margin-top: 10px;
     }
     
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-    
-    .signup-link {
-      text-align: center;
-      margin-top: 25px;
-      color: #666;
-      font-size: 14px;
-    }
-    
-    .signup-link a {
-      color: #667eea;
-      text-decoration: none;
-      font-weight: bold;
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
     
     .error-message {
@@ -147,36 +106,24 @@
       text-align: center;
     }
     
+    .switch-mode {
+      text-align: center;
+      margin-top: 20px;
+      color: #666;
+    }
+    
+    .switch-mode a {
+      color: #667eea;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    
     .demo-btn {
       background: transparent;
       border: 2px solid #667eea;
       color: #667eea;
       background: white;
-      margin-top: 15px;
-    }
-    
-    .demo-btn:hover {
-      background: #667eea;
-      color: white;
-    }
-    
-    .divider {
-      display: flex;
-      align-items: center;
-      margin: 25px 0;
-      color: #999;
-      font-size: 12px;
-    }
-    
-    .divider::before, .divider::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: #e0e0e0;
-    }
-    
-    .divider span {
-      margin: 0 15px;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -184,111 +131,101 @@
   <div class="login-container">
     <div class="logo">
       <i class="fas fa-fire"></i>
-      <h1>Welcome Back</h1>
-      <p>Sign in to continue</p>
+      <h1>FitBlueprint</h1>
     </div>
     
     <div id="messageArea"></div>
     
-    <form id="loginForm">
+    <form id="authForm">
       <div class="input-group">
-        <label><i class="fas fa-user"></i> Username</label>
-        <div class="input-icon">
-          <i class="fas fa-user"></i>
-          <input type="text" id="username" placeholder="Enter your username" required>
-        </div>
+        <label>Username</label>
+        <input type="text" id="username" placeholder="Enter username" required>
       </div>
       
       <div class="input-group">
-        <label><i class="fas fa-lock"></i> Password</label>
-        <div class="input-icon">
-          <i class="fas fa-lock"></i>
-          <input type="password" id="password" placeholder="Enter your password" required>
-        </div>
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter password" required>
       </div>
       
-      <button type="submit" id="loginBtn">
-        <i class="fas fa-sign-in-alt"></i> Sign In
-      </button>
+      <button type="submit" id="submitBtn">Login</button>
     </form>
     
-    <div class="divider">
-      <span>or</span>
-    </div>
+    <button class="demo-btn" id="demoBtn">Demo Account</button>
     
-    <button class="demo-btn" id="demoBtn">
-      <i class="fas fa-play"></i> Try Demo Account
-    </button>
-    
-    <div class="signup-link">
-      Don't have an account? <a href="signup.html">Create Account</a>
+    <div class="switch-mode">
+      Don't have an account? <a href="#" id="switchMode">Sign Up</a>
     </div>
   </div>
 
   <script>
     const API_URL = 'http://localhost:3000/api';
+    let isLoginMode = true;
     
     function showMessage(message, type) {
       const messageArea = document.getElementById('messageArea');
-      const className = type === 'error' ? 'error-message' : 'success-message';
-      messageArea.innerHTML = `<div class="${className}">${message}</div>`;
+      messageArea.innerHTML = `<div class="${type === 'error' ? 'error-message' : 'success-message'}">${message}</div>`;
       setTimeout(() => {
         messageArea.innerHTML = '';
-      }, 4000);
+      }, 3000);
     }
     
-    async function login(e) {
+    async function handleAuth(e) {
       e.preventDefault();
       
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
-      const loginBtn = document.getElementById('loginBtn');
+      const submitBtn = document.getElementById('submitBtn');
       
       if (!username || !password) {
         showMessage('Please enter username and password', 'error');
         return;
       }
       
-      loginBtn.disabled = true;
-      loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+      const endpoint = isLoginMode ? '/login' : '/register';
+      
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Please wait...';
       
       try {
-        const response = await fetch(`${API_URL}/login`, {
+        const response = await fetch(`${API_URL}${endpoint}`, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
         
         const data = await response.json();
         
         if (response.ok) {
+          // Set session expiry to 2 hours from now
+          const sessionExpiresAt = Date.now() + (2 * 60 * 60 * 1000);
+          
           localStorage.setItem('authToken', data.token);
           localStorage.setItem('username', username);
           localStorage.setItem('userId', data.userId);
+          localStorage.setItem('sessionId', data.sessionId);
+          localStorage.setItem('sessionExpiresAt', sessionExpiresAt);
           
-          showMessage('Login successful! Redirecting...', 'success');
+          showMessage(isLoginMode ? 'Login successful! Redirecting...' : 'Account created! Logging in...', 'success');
           
           setTimeout(() => {
             window.location.href = 'index.html';
-          }, 1000);
+          }, 1500);
         } else {
-          showMessage(data.error || 'Invalid username or password', 'error');
+          showMessage(data.error || 'Authentication failed', 'error');
         }
       } catch (error) {
-        console.error('Login error:', error);
-        showMessage('Cannot connect to server. Make sure the backend is running on port 3000', 'error');
+        console.error('Auth error:', error);
+        showMessage('Network error. Please try again.', 'error');
       } finally {
-        loginBtn.disabled = false;
-        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = isLoginMode ? 'Login' : 'Sign Up';
       }
     }
     
     async function demoLogin() {
-      const demoBtn = document.getElementById('demoBtn');
-      demoBtn.disabled = true;
-      demoBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading demo...';
+      const submitBtn = document.getElementById('demoBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading demo...';
       
       try {
         const response = await fetch(`${API_URL}/demo-login`, {
@@ -299,38 +236,51 @@
         const data = await response.json();
         
         if (response.ok) {
+          const sessionExpiresAt = Date.now() + (2 * 60 * 60 * 1000);
+          
           localStorage.setItem('authToken', data.token);
           localStorage.setItem('username', 'demo_user');
           localStorage.setItem('userId', data.userId);
+          localStorage.setItem('sessionId', data.sessionId);
+          localStorage.setItem('sessionExpiresAt', sessionExpiresAt);
           
           showMessage('Demo mode activated! Redirecting...', 'success');
           setTimeout(() => {
             window.location.href = 'index.html';
           }, 1000);
-        } else {
-          throw new Error('Demo login failed');
         }
       } catch (error) {
-        // Offline demo fallback
-        localStorage.setItem('authToken', 'demo_' + Date.now());
-        localStorage.setItem('username', 'demo_user');
-        localStorage.setItem('userId', '999');
-        showMessage('Demo mode activated (offline)!', 'success');
-        setTimeout(() => {
-          window.location.href = 'index.html';
-        }, 1000);
+        showMessage('Demo login failed', 'error');
       } finally {
-        demoBtn.disabled = false;
-        demoBtn.innerHTML = '<i class="fas fa-play"></i> Try Demo Account';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Demo Account';
       }
     }
     
-    document.getElementById('loginForm').addEventListener('submit', login);
-    document.getElementById('demoBtn').addEventListener('click', demoLogin);
+    document.getElementById('switchMode').addEventListener('click', (e) => {
+      e.preventDefault();
+      isLoginMode = !isLoginMode;
+      const submitBtn = document.getElementById('submitBtn');
+      if (isLoginMode) {
+        submitBtn.textContent = 'Login';
+        document.getElementById('switchMode').innerHTML = 'Don\'t have an account? <a href="#">Sign Up</a>';
+      } else {
+        submitBtn.textContent = 'Sign Up';
+        document.getElementById('switchMode').innerHTML = 'Already have an account? <a href="#">Login</a>';
+      }
+    });
     
-    // Check if already logged in
-    if (localStorage.getItem('authToken')) {
+    document.getElementById('demoBtn').addEventListener('click', demoLogin);
+    document.getElementById('authForm').addEventListener('submit', handleAuth);
+    
+    // Check if already logged in and session not expired
+    const token = localStorage.getItem('authToken');
+    const expiresAt = localStorage.getItem('sessionExpiresAt');
+    if (token && expiresAt && Date.now() < parseInt(expiresAt)) {
       window.location.href = 'index.html';
+    } else if (token) {
+      // Session expired, clear localStorage
+      localStorage.clear();
     }
   </script>
 </body>
