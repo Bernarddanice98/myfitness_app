@@ -493,92 +493,48 @@ app.post('/api/logout', authenticateToken, (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-// Replace your existing user-data endpoints with these:
-
 app.get('/api/user-data/:userId', authenticateToken, async (req, res) => {
   const userId = req.params.userId;
   if (req.user.userId.toString() !== userId) return res.status(403).json({ error: 'Access denied' });
   try {
-    // Get all columns
-    const result = await pool.query('SELECT profile, saved_workouts, saved_recipes, workout_history, completed_workouts FROM user_data WHERE user_id = $1', [userId]);
-    if (result.rows.length === 0) {
-      // Return empty defaults if no record exists
-      return res.json({ 
-        profile: {}, 
-        savedWorkouts: [], 
-        savedRecipes: [], 
-        workoutHistory: {}, 
-        completedWorkouts: {} 
-      });
-    }
+    const result = await pool.query('SELECT profile, saved_workouts, workout_history FROM user_data WHERE user_id = $1', [userId]);
+    if (result.rows.length === 0) return res.json({ profile: {}, savedWorkouts: [], workoutHistory: {} });
     res.json({
       profile: result.rows[0].profile || {},
       savedWorkouts: result.rows[0].saved_workouts || [],
-      savedRecipes: result.rows[0].saved_recipes || [],
-      workoutHistory: result.rows[0].workout_history || {},
-      completedWorkouts: result.rows[0].completed_workouts || {}
+      workoutHistory: result.rows[0].workout_history || {}
     });
   } catch (error) {
-    console.error('GET user-data error:', error);
     res.status(500).json({ error: 'Failed to fetch user data' });
   }
 });
-
 app.post('/api/user-data/:userId', authenticateToken, async (req, res) => {
   const userId = req.params.userId;
-  const { profile, savedWorkouts, savedRecipes, workoutHistory } = req.body;
-  
-  if (req.user.userId.toString() !== userId) {
-    return res.status(403).json({ error: 'Access denied' });
-  }
-  
+  const { profile, savedWorkouts, workoutHistory } = req.body;
+  if (req.user.userId.toString() !== userId) return res.status(403).json({ error: 'Access denied' });
   try {
-    // First check if user_data exists
-    const checkUser = await pool.query('SELECT id FROM user_data WHERE user_id = $1', [userId]);
-    
-    if (checkUser.rows.length === 0) {
-      // Insert new record
-      await pool.query(
-        `INSERT INTO user_data (user_id, profile, saved_workouts, saved_recipes, workout_history, completed_workouts) 
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [userId, profile || {}, savedWorkouts || [], savedRecipes || [], workoutHistory || {}, {}]
-      );
-    } else {
-      // Update existing record - build dynamic query
-      const updates = [];
-      const values = [];
-      let paramCount = 1;
-      
-      if (profile !== undefined) {
-        updates.push(`profile = $${paramCount++}`);
-        values.push(profile);
-      }
-      if (savedWorkouts !== undefined) {
-        updates.push(`saved_workouts = $${paramCount++}`);
-        values.push(savedWorkouts);
-      }
-      if (savedRecipes !== undefined) {
-        updates.push(`saved_recipes = $${paramCount++}`);
-        values.push(savedRecipes);
-      }
-      if (workoutHistory !== undefined) {
-        updates.push(`workout_history = $${paramCount++}`);
-        values.push(workoutHistory);
-      }
-      
-      updates.push(`updated_at = CURRENT_TIMESTAMP`);
-      values.push(userId);
-      
-      const query = `UPDATE user_data SET ${updates.join(', ')} WHERE user_id = $${paramCount}`;
-      await pool.query(query, values);
-    }
-    
+    await pool.query(
+      `INSERT INTO user_data (user_id, profile, saved_workouts, workout_history, updated_at)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+       ON CONFLICT (user_id) DO UPDATE
+       SET profile = EXCLUDED.profile,
+           saved_workouts = EXCLUDED.saved_workouts,
+           workout_history = EXCLUDED.workout_history,
+           updated_at = CURRENT_TIMESTAMP`,
+      [
+        userId,
+        JSON.stringify(profile || {}),       // ← add JSON.stringify
+        JSON.stringify(savedWorkouts || []),  // ← add JSON.stringify
+        JSON.stringify(workoutHistory || {})  // ← add JSON.stringify
+      ]
+    );
     res.json({ success: true });
   } catch (error) {
-    console.error('POST user-data error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Save user data error:', error); // ← make sure this is there
+    res.status(500).json({ error: error.message }); // ← return the actual error
   }
 });
+
 app.post('/api/workout-progress/:userId', authenticateToken, async (req, res) => {
   const userId = req.params.userId;
   const { workoutData, setsStatus, weightsData, repsData } = req.body;
